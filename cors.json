@@ -1,0 +1,6 @@
+[{
+    "origin": ["http://localhost:5175", "https://my-react-7dedd.firebaseapp.com"],
+    "method": ["GET", "POST", "PUT", "DELETE"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Authorization"]
+}]

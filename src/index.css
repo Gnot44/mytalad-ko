@@ -1,0 +1,365 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.overflow-auto {
+    overflow-y: auto;
+    /* เพื่อให้มี scroll bar เมื่อเกินขนาดความสูงที่กำหนด */
+}
+
+@media (min-width: 640px) {
+    .overflow-auto {
+        max-height: calc(100vh - 200px);
+        /* ปรับความสูงให้เข้ากับหน้าจอ */
+    }
+}
+
+.image-click-effect {
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0% {
+        transform: translate(1px, 1px) rotate(0deg);
+    }
+    10% {
+        transform: translate(-1px, -2px) rotate(-1deg);
+    }
+    20% {
+        transform: translate(-3px, 0px) rotate(1deg);
+    }
+    30% {
+        transform: translate(3px, 2px) rotate(0deg);
+    }
+    40% {
+        transform: translate(1px, -1px) rotate(1deg);
+    }
+    50% {
+        transform: translate(-1px, 2px) rotate(-1deg);
+    }
+    60% {
+        transform: translate(-3px, 1px) rotate(0deg);
+    }
+    70% {
+        transform: translate(3px, 1px) rotate(-1deg);
+    }
+    80% {
+        transform: translate(-1px, -1px) rotate(1deg);
+    }
+    90% {
+        transform: translate(1px, 2px) rotate(0deg);
+    }
+    100% {
+        transform: translate(1px, -2px) rotate(-1deg);
+    }
+}
+
+
+/* Condata.css */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f5f5f5;
+    font-family: 'Arial', sans-serif;
+}
+
+.title {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.input-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 0 20px;
+}
+
+.input-field {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+.input-field:focus {
+    border-color: #007bff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    /* จัดการให้ input และ button อยู่คนละบรรทัด */
+    align-items: center;
+    /* จัดให้ element อยู่ตรงกลาง */
+}
+
+.input-field {
+    margin-bottom: 10px;
+    /* เว้นระยะห่างระหว่าง input กับ button */
+}
+
+
+/* Add this CSS to your stylesheet */
+
+.table-container {
+    overflow-x: auto;
+}
+
+
+/* Add this CSS to your stylesheet */
+
+.btn {
+    padding: 12px 24px;
+    font-size: 16px;
+}
+
+
+/* Add this CSS to your stylesheet */
+
+.modal-box {
+    width: 90%;
+    /* Adjust width for mobile screens */
+    max-width: 500px;
+    /* Set a maximum width for larger screens */
+}
+
+
+/* Add this CSS to your stylesheet */
+
+.input {
+    padding: 12px;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.selected-text-color {
+    color: black;
+    /* Change to your desired color */
+}
+
+.loading-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    /* Keeps it fixed in the viewport */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: pink;
+    /* Pink background */
+    z-index: 9999;
+    /* Ensure it's above other content */
+}
+
+.progress {
+    margin-bottom: 16px;
+    /* Spacing between progress and text */
+}
+
+body {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+}
+
+@media (max-width: 768px) {
+    .card {
+        width: 100%;
+        font-size: 0.875rem;
+        /* smaller text size */
+    }
+    .stat-title {
+        font-size: 0.75rem;
+        /* smaller text size */
+    }
+}
+
+
+/* ModalStyles.css */
+
+.ReactModal__Overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    /* สีพื้นหลังของโมดัล */
+}
+
+.ReactModal__Content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    /* ความกว้างของโมดัล */
+    max-width: 400px;
+    /* ความกว้างสูงสุด */
+    padding: 2rem;
+    /* ระยะห่างภายใน */
+    background: #fff;
+    /* สีพื้นหลังของโมดัล */
+    border-radius: 8px;
+    /* มุมมน */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* เงาของโมดัล */
+    outline: none;
+    /* ลบขอบของโมดัล */
+}
+
+.ReactModal__Content h2 {
+    font-size: 1.25rem;
+    /* ขนาดตัวอักษรของหัวข้อ */
+    margin-bottom: 1rem;
+    /* ระยะห่างด้านล่างของหัวข้อ */
+    color: #333;
+    /* สีตัวอักษร */
+}
+
+.ReactModal__Content button {
+    @apply bg-blue-500 text-white py-2 px-4 rounded;
+    /* ปุ่มสไตล์ Tailwind CSS */
+}
+
+.ReactModal__Content button:hover {
+    @apply bg-blue-600;
+    /* สีพื้นหลังของปุ่มเมื่อเลื่อนเมาส์ */
+}
+
+
+/* App.css */
+
+.app-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+input[type="file"] {
+    margin-bottom: 10px;
+}
+
+button {
+    margin: 10px 0;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.progress-container {
+    margin: 10px 0;
+}
+
+progress {
+    width: 100%;
+    height: 20px;
+    margin-bottom: 5px;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    text-align: center;
+    width: 300px;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.error-message button {
+    background: #f5c6cb;
+    border: none;
+    color: #721c24;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+
+/* App.css */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    /* Ensure modal is on top of other content */
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    text-align: center;
+    width: 300px;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+}
+
+
+/* App.css */
+
+.progress-container {
+    position: relative;
+    width: 100%;
+    height: 30px;
+    background: #e0e0e0;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #4caf50;
+    border-radius: 5px;
+    transition: width 0.5s ease;
+}
+
+.error-message {
+    color: red;
+    margin-top: 10px;
+}
+
+button {
+    margin-top: 10px;
+}
