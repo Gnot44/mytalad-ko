@@ -363,3 +363,9 @@ progress {
 button {
     margin-top: 10px;
 }
+
+.custom-small-btn {
+    padding: 0.1rem 0.3rem; /* ปรับ padding ให้เล็กลง */
+    font-size: 0.5rem;      /* ปรับขนาด font ให้เล็กลง */
+    min-width: 20px;        /* ปรับขนาดความกว้างขั้นต่ำของปุ่ม */
+  }

@@ -11,11 +11,16 @@ const Navbar = ({ isDarkTheme, toggleTheme, currentDateTime, deliveryCount,
   const isCustnav = user?.role === 'customer'; // Assuming user object has a role property
 
   const navStyle = {
-    backgroundColor: isDarkTheme ? '#1A1A2E' : '#E0F2F1',
-    transition: 'background-color 0.3s ease',
-    fontFamily: 'Baskervville SC, serif',
-    justifyContent: 'space-between',
-    padding: '10px',
+    color: isDarkTheme ? '#FFFFFF' : '#000000', // ตัวอักษรสีขาวในโหมดมืด สีดำในโหมดสว่าง
+    backgroundColor: isDarkTheme ? '#1A1A2E' : '#FFFFFF', // พื้นหลังโหมดมืด/สว่าง
+    border: isDarkTheme ? '2px solid #2E2E3A' : '2px solid #E0E0E0', // ขอบสีเข้มในโหมดมืดและสีเทาอ่อนในโหมดสว่าง
+    borderRadius: '15px', // ขอบโค้งมน
+    boxShadow: isDarkTheme ? '0 6px 12px rgba(0, 0, 0, 0.5)' : '0 6px 12px rgba(0, 0, 0, 0.1)', // เงาเข้มในโหมดมืดและเงาอ่อนในโหมดสว่าง
+    transition: 'color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease', // เพิ่มการเปลี่ยนแปลงนุ่มนวลสำหรับเงา
+    fontFamily: 'IBM Plex Sans Thai, sans-serif', // ฟอนต์ไทยที่ทันสมัย
+    fontSize: '20px', // ขนาดตัวอักษร
+    padding: '1rem', // เพิ่ม padding ให้สวยงาม
+    margin: '1rem', // เพิ่ม margin เพื่อให้เนื้อหาดูไม่อัดแน่น
   };
 
   const LogStyle = {
@@ -64,7 +69,10 @@ const Navbar = ({ isDarkTheme, toggleTheme, currentDateTime, deliveryCount,
   };
 
   return (
-    <div className="navbar bg-blue-500 flex flex-col md:flex-row items-center" style={navStyle}>
+    <div 
+    className="navbar bg-blue-500 flex flex-col md:flex-row items-center" 
+    style={{ ...navStyle, width: '100%' }}  // ปรับความกว้างเป็น 80% หรือคุณสามารถเปลี่ยนเป็นค่าที่ต้องการ
+  >
   <div className="flex items-center w-full md:w-auto mb-2 md:mb-0">
     <div className="w-10 h-10 rounded-full overflow-hidden mr-2" onClick={handleImageClick}>
       <img
@@ -108,6 +116,10 @@ const Navbar = ({ isDarkTheme, toggleTheme, currentDateTime, deliveryCount,
       </>
     ) : null}
   </div>
+
+
+
+  
   <div className="flex items-center">
     <div className="datetime ml-2 text-white" style={frontStyle}>
       {currentDateTime.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {' '}
@@ -154,31 +166,32 @@ const Navbar = ({ isDarkTheme, toggleTheme, currentDateTime, deliveryCount,
     
     <ThemeToggle />
     {user ? (
-     <div className="relative z-10" style={navStyle}>
-     <ul className="menu menu-horizontal px-1">
-       <li>
-         <details>
-           <summary className="cursor-pointer">
-             <img
-               src={iavatar || 'default-avatar.png'}
-               alt="Profile"
-               className="w-8 h-8 rounded-full"
-             />
-           </summary>
-   
-           <ul className="dropdown-content mt-1 p-2 bg-[#E6F7F8] text-black shadow rounded-box w-24" style={LogStyle}>
-             <li>
-               <a className="dropdown-item hover:bg-[#D1EEF0]">Profile</a>
-             </li>
-             <li onClick={onLogout}>
-               <a className="dropdown-item hover:bg-[#D1EEF0]">Logout</a>
-             </li>
-           </ul>
-   
-         </details>
-       </li>
-     </ul>
-   </div>
+   <div className="relative z-10 flex justify-end">
+   <ul className="menu menu-horizontal px-1">
+     <li>
+       <details className="group">
+         <summary className="cursor-pointer flex items-center">
+           <img
+             src={iavatar || 'default-avatar.png'}
+             alt="Profile"
+             className="w-8 h-8 rounded-full"
+           />
+         </summary>
+ 
+         <ul className="dropdown-content mt-1 p-2 bg-[#E6F7F8] text-black shadow rounded-box w-24 opacity-0 group-open:opacity-100 transition-opacity duration-300 ease-in-out">
+           <li>
+             <a className="dropdown-item hover:bg-[#D1EEF0] p-2 rounded" href="#profile">Profile</a>
+           </li>
+           <li onClick={onLogout}>
+             <a className="dropdown-item hover:bg-[#D1EEF0] p-2 rounded" href="#logout">Logout</a>
+           </li>
+         </ul>
+ 
+       </details>
+     </li>
+   </ul>
+ </div>
+ 
    
 
     ) : null}

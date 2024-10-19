@@ -45,6 +45,9 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user}) {
   const isAdminside = user?.role === 'admin';
   const iscustomerside = user?.role === 'customer';
   const [isSavingside, setIsSavingside] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(1);
+
+  
 
   
   
@@ -242,11 +245,16 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user}) {
   };
 
   const totalStyle = {
-    color: isDarkTheme ? '#FFFFFF' : '#000000',
-    backgroundColor: isDarkTheme ? '#1A1A2E' : '#F0F0F0',
-    transition: 'color 0.3s ease, background-color 0.3s ease',
-    fontFamily: 'IBM Plex Sans Thai, sans-serif',
-    fontSize: '20px',
+    color: isDarkTheme ? '#FFFFFF' : '#000000', // ตัวอักษรสีขาวในโหมดมืด สีดำในโหมดสว่าง
+    backgroundColor: isDarkTheme ? '#1A1A2E' : '#FFFFFF', // พื้นหลังโหมดมืด/สว่าง
+    border: isDarkTheme ? '2px solid #2E2E3A' : '2px solid #E0E0E0', // ขอบสีเข้มในโหมดมืดและสีเทาอ่อนในโหมดสว่าง
+    borderRadius: '15px', // ขอบโค้งมน
+    boxShadow: isDarkTheme ? '0 6px 12px rgba(0, 0, 0, 0.5)' : '0 6px 12px rgba(0, 0, 0, 0.1)', // เงาเข้มในโหมดมืดและเงาอ่อนในโหมดสว่าง
+    transition: 'color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease', // เพิ่มการเปลี่ยนแปลงนุ่มนวลสำหรับเงา
+    fontFamily: 'IBM Plex Sans Thai, sans-serif', // ฟอนต์ไทยที่ทันสมัย
+    fontSize: '20px', // ขนาดตัวอักษร
+    padding: '1rem', // เพิ่ม padding ให้สวยงาม
+    margin: '1rem', // เพิ่ม margin เพื่อให้เนื้อหาดูไม่อัดแน่น
   };
 
   const menuStyle = {
@@ -274,16 +282,20 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user}) {
   };
 
   const containerStyle = {
-    display: 'flex',
-    flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflowX: 'auto',
-    overflowY: 'hidden',
-    height: 'auto',
+    color: isDarkTheme ? '#FFFFFF' : '#000000', // ตัวอักษรสีขาวในโหมดมืด สีดำในโหมดสว่าง
+    backgroundColor: isDarkTheme ? '#1A1A2E' : '#FFFFFF', // พื้นหลังโหมดมืด/สว่าง
+    border: isDarkTheme ? '2px solid #2E2E3A' : '2px solid #E0E0E0', // ขอบสีเข้มในโหมดมืดและสีเทาอ่อนในโหมดสว่าง
+    borderRadius: '15px', // ขอบโค้งมน
+    boxShadow: isDarkTheme ? '0 6px 12px rgba(0, 0, 0, 0.5)' : '0 6px 12px rgba(0, 0, 0, 0.1)', // เงาเข้มในโหมดมืดและเงาอ่อนในโหมดสว่าง
+    transition: 'color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease', // เพิ่มการเปลี่ยนแปลงนุ่มนวลสำหรับเงา
+    fontFamily: 'IBM Plex Sans Thai, sans-serif', // ฟอนต์ไทยที่ทันสมัย
+    fontSize: '20px', // ขนาดตัวอักษร
+    padding: '1rem', // เพิ่ม padding ให้สวยงาม
+    margin: '1rem', // เพิ่ม margin เพื่อให้เนื้อหาดูไม่อัดแน่น
   };
   
-  // ตรวจสอบขนาดหน้าจอ
+  
+  // ตรวจสอบขนาดหน้าจอ 
   const isMobile = window.innerWidth <= 768;
 
   const addToCart = (item) => {
@@ -487,6 +499,27 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user}) {
     setDeliveryLocation(suggestion);
     setFilteredLocations([]);
   };
+
+  
+// Function to go to the next slide
+const nextSlide = () => {
+  setCurrentSlide((prevSlide) => (prevSlide === 4 ? 1 : prevSlide + 1));
+};
+
+// Function to go to the previous slide
+const prevSlide = () => {
+  setCurrentSlide((prevSlide) => (prevSlide === 1 ? 4 : prevSlide - 1));
+};
+
+// Auto-slide every 5 seconds
+useEffect(() => {
+  const slideInterval = setInterval(() => {
+    nextSlide();
+  }, 5000); // 5 seconds
+  return () => clearInterval(slideInterval); // Cleanup on unmount
+}, []);
+
+
   
 
   return loadingss ? (
@@ -500,43 +533,126 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user}) {
   <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
   
   <div className="drawer-content">
-    
+
+  {iscustomerside && (
+  <div className="carousel w-full h-60 relative overflow-hidden rounded-lg shadow-lg border-2 border-gray-300">
+  {/* Slide 1 */}
+  <div
+    id="slide1"
+    className={`carousel-item absolute w-full h-full transition-opacity duration-700 ease-in-out ${
+      currentSlide === 1 ? "opacity-100 z-10" : "opacity-0 z-0"
+    }`}
+  >
+    <img
+      src="https://img.daisyui.com/images/stock/photo-1625726411847-8cbb60cc71e6.webp"
+      className="w-full h-full object-cover"
+    />
+  </div>
+
+  {/* Slide 2 */}
+  <div
+    id="slide2"
+    className={`carousel-item absolute w-full h-full transition-opacity duration-700 ease-in-out ${
+      currentSlide === 2 ? "opacity-100 z-10" : "opacity-0 z-0"
+    }`}
+  >
+    <img
+      src="https://img.daisyui.com/images/stock/photo-1609621838510-5ad474b7d25d.webp"
+      className="w-full h-full object-cover"
+    />
+  </div>
+
+  {/* Slide 3 */}
+  <div
+    id="slide3"
+    className={`carousel-item absolute w-full h-full transition-opacity duration-700 ease-in-out ${
+      currentSlide === 3 ? "opacity-100 z-10" : "opacity-0 z-0"
+    }`}
+  >
+    <img
+      src="https://img.daisyui.com/images/stock/photo-1414694762283-acccc27bca85.webp"
+      className="w-full h-full object-cover"
+    />
+  </div>
+
+  {/* Slide 4 */}
+  <div
+    id="slide4"
+    className={`carousel-item absolute w-full h-full transition-opacity duration-700 ease-in-out ${
+      currentSlide === 4 ? "opacity-100 z-10" : "opacity-0 z-0"
+    }`}
+  >
+    <img
+      src="https://img.daisyui.com/images/stock/photo-1665553365602-b2fb8e5d1707.webp"
+      className="w-full h-full object-cover"
+    />
+  </div>
+
+  {/* Navigation Buttons */}
+  <div className="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">
+    <button
+      onClick={prevSlide}
+      className="btn btn-circle bg-gray-700 hover:bg-gray-900 text-white"
+    >
+      ❮
+    </button>
+    <button
+      onClick={nextSlide}
+      className="btn btn-circle bg-gray-700 hover:bg-gray-900 text-white"
+    >
+      ❯
+    </button>
+  </div>
+
+  {/* Slide Indicators */}
+  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+    {[1, 2, 3, 4].map((index) => (
+      <button
+        key={index}
+        className={`w-3 h-3 rounded-full ${
+          currentSlide === index
+            ? "bg-gray-900"
+            : "bg-gray-300 hover:bg-gray-500"
+        }`}
+        onClick={() => setCurrentSlide(index)}
+      ></button>
+    ))}
+  </div>
+</div>
+
+)}
+
+  {isAdminside && (
   <div className="stats shadow flex justify-center mx-2 mt-2 overflow-x-auto h-auto lg:h-40 text-black bg-gray-100 dark:text-white dark:bg-gray-800" style={containerStyle}>
-    <div className="stat" style={totalStyle}>
+    <div className="stat">
       {isAdminside && (
 
-        <div className="stat-title text-sm lg:text-base" style={totalStyle}>
+        <div className="stat-title text-sm lg:text-base" style={menuStyle}>
           รายได้ทั้งหมด
           <div className="stat-value text-primary text-xl lg:text-xl">{formatNumber(totalIncome)} บาท</div>
         </div>
       )}
-      {iscustomerside && (
-      <div className="stat-title text-sm lg:text-base" style={isMobile ? mobileStyle : choStyle}>
-        🛒 เลือกผักผลไม้ใส่ตะกร้าได้เลยครับ 
-      </div>
-      )}
+      
+      
     </div>
-    <div className="stat" style={totalStyle}>
+    <div className="stat">
       
       {isAdminside && (
 
-        <div className="stat-title text-sm lg:text-base" style={totalStyle}>
+        <div className="stat-title text-sm lg:text-base" style={menuStyle}>
           น้ำหนักรวม
           <div className="stat-value text-secondary text-xl lg:text-xl">{totalQuality.toFixed(2)} กิโลกรัม</div>
           <div className="stat-value text-xl lg:text-xl">
     ส่งออกแล้วรวม {deliveryData.filter(item => item.paidstatus === true).length} ชุด
 </div>
-
         </div>
-
-      )}
-      {iscustomerside && (
-      <div className="stat-title text-sm lg:text-base" style={isMobile ? mobileStyle : choStyle}>
-        🍎🍊 ผลไม้สดใหม่ทุกวัน เลือกซื้อเลย! 🍉🍇
-      </div>
       )}
     </div>
   </div>
+
+
+
+  )}
    
     <div className="flex flex-col lg:flex-row mt-4" >
     {isAdminside && (
@@ -640,13 +756,13 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user}) {
           />
         </figure>
         <div className="card-body" style={totalStyle}>
-          <h2 className="card-title text-base lg:text-lg text-center" style={totalStyle}>{card.title}</h2>
-          <div className="stat-title mr-4 text-sm lg:text-base text-center" style={totalStyle}>ราคา {card.price} บาท</div>
+          <h2 className="card-title text-base lg:text-lg text-center">{card.title}</h2>
+          <div className="stat-title mr-4 text-sm lg:text-base text-center">ราคา {card.price} บาท</div>
           {isAdminside && (
-            <div className="stat-title mr-4 text-sm lg:text-base text-center" style={totalStyle}>รวม {(cumulativeQuantities[card.id] || 0).toFixed(2)} กก.</div>
+            <div className="stat-title mr-4 text-sm lg:text-base text-center">รวม {(cumulativeQuantities[card.id] || 0).toFixed(2)} กก.</div>
           )}
           <div className="card-actions justify-center"> {/* ใช้ justify-center เพื่อจัดปุ่มให้ตรงกลาง */}
-            <button className="btn btn-primary text-sm lg:text-base px-3 lg:px-4 py-1 lg:py-2" onClick={() => addToCart(card)}>เพิ่มรายการ</button>
+            <button className="btn btn-primary text-sm lg:text-base px-3 lg:px-4 py-1 lg:py-2" onClick={() => addToCart(card)}>เพิ่ม</button>
           </div>
         </div>
       </div>
@@ -687,9 +803,10 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user}) {
 </div>
 
 
-        <div className="mt-4 flex justify-end">
-          <div className="stat-title mr-4" style={totalStyle}>ราคารวม</div>
-          <div className="stat-value text-primary" style={totalStyle}> {formatNumber(calculateTotalPrice())} บาท</div>
+        <div className="mt-2 flex justify-end font-bold">
+        <div style={{ paddingRight: '10px' }}>ราคารวม</div>
+<div  >{formatNumber(calculateTotalPrice())} บาท</div>
+
         </div>
         {isAdminside && (
         <div className="mt-4 flex justify-end">
@@ -699,12 +816,12 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user}) {
         )}
          {isAdminside && (
         <div className="mt-4 flex justify-end">
-          <div className="stat-title mr-4" style={totalStyle}>ทอนเงิน</div>
-          <div className="stat-value text-primary" style={totalStyle}> {calculateChange()} บาท</div>
+          <div className="stat-title mr-4">ทอนเงิน</div>
+          <div className="stat-value text-primary" style={menuStyle}> {calculateChange()} บาท</div>
         </div>
         )}
         {isAdminside && (
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-center">
           <div className="relative w-full max-w-xs">
             <input
               style={totalStyle}
@@ -731,7 +848,9 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user}) {
               </ul>
             )}
         </div>
-        </div>
+
+
+</div>
       )}
 
         <div className="mt-4 flex justify-end">
