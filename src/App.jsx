@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars 
 import React, { useState, useEffect } from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import Navbar from "./component/Navbar/Navbar";
@@ -15,6 +16,7 @@ const ProtectedRoute = ({ user, roles, children }) => {
   if (!user) {
     return <Navigate to="/login" />;
   }
+  // eslint-disable-next-line react/prop-types
   if (roles && roles.length && !roles.includes(user.role)) {
     return <Navigate to="/unauthorized" />;
   }
