@@ -4,6 +4,7 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getAuth } from "firebase/auth"; // ✅ เพิ่มตรงนี้
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
@@ -18,6 +19,7 @@ const firebaseConfig = {
 
 // Initialize Firebas
 const app = initializeApp(firebaseConfig);
+// const auth = getAuth(app); // ✅ สร้าง auth ที่ผูกกับ app
 
 // Optional: initialize analytics (only works in browser environment)
 let analytics;
@@ -27,4 +29,5 @@ if (typeof window !== "undefined") {
 
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const auth = getAuth(app); // ✅ export auth
 export { analytics, app };

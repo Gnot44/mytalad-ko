@@ -6,11 +6,13 @@ import Sidebar from './component/Sidebar/Sidebar';
 import Footer from './component/Footer/Footer';
 import Contact from './component/Contact/Contact';
 import Condata from './component/Condata/Condata';
-import Login from './component/Login/Login';
+// import Login from './component/Login/Login';
 import { useNavigate } from 'react-router-dom';
 import Summandpay from './component/Summandpay/Summandpay';
 import Ordersump from './component/Ordersump/Ordersump';
 import Timeline from './component/Timeline/Timeline';
+import LoginPhone from './component/Loginphone/Loginphone';
+import RegisterPhone from './component/Registerphone/Registerphone';
 
 const ProtectedRoute = ({ user, roles, children }) => {
   if (!user) {
@@ -18,7 +20,7 @@ const ProtectedRoute = ({ user, roles, children }) => {
   }
   // eslint-disable-next-line react/prop-types
   if (roles && roles.length && !roles.includes(user.role)) {
-    return <Navigate to="/unauthorized" />;
+    return <Navigate to="/login" />;
   }
   return children;
 };
@@ -49,6 +51,19 @@ export default function App() {
     setUser(user);
     localStorage.setItem('user', JSON.stringify(user));
   };
+
+  const handleRegister = (userData) => {
+    console.log('User registered:', userData);
+    // สามารถอัปเดต state global ที่นี่ถ้าต้องการ
+    // เช่น setUser(userData); ถ้ามี state ผู้ใช้
+    // แต่ไม่จำเป็นต้อง alert หรือ navigate ที่นี่แล้ว
+  };
+
+  // const handleRegister = (userData) => {
+  //   setUser(userData);
+  //   localStorage.setItem('user', JSON.stringify(userData));
+  //   navigate(userData.role === 'admin' ? '/ordersump' : '/contact');
+  // };
 
   const handleLogout = () => {
     setUser(null);
@@ -180,7 +195,10 @@ export default function App() {
       />
       <main>
         <Routes>
-          <Route path="/login" element={<Login isDarkTheme={isDarkTheme} onLogin={handleLogin} />} />
+        <Route path="/register" element={<RegisterPhone onRegister={handleRegister} />} />
+          {/* <Route path="/login" element={<Login isDarkTheme={isDarkTheme} onLogin={handleLogin} />} /> */}
+          <Route path="/login" element={<LoginPhone isDarkTheme={isDarkTheme} onLogin={handleLogin} />} />
+          
           <Route path="/contact" element={
             <ProtectedRoute user={user} roles={['user', 'admin']}>
               <Contact isDarkTheme={isDarkTheme} updateDeliveryCount={setDeliveryCount} Load_iy={Loadiy} />
@@ -211,7 +229,6 @@ export default function App() {
               <Timeline isDarkTheme={isDarkTheme} user={user} />
             </ProtectedRoute>
           } />
-          <Route path="/unauthorized" element={<div>ไม่มีข้อมูลแสดง</div>} />
           <Route path="/" element={<Navigate to={user ? "/contact" : "/login"} />} />
         </Routes>
       </main>
