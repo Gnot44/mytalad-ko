@@ -1,393 +1,243 @@
+// Ordersump.jsx - Clean Full View with Approval Actions and Toggleable Charts
+
 import React, { useState, useEffect } from 'react';
+import {
+  Box, Button, Typography, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, Paper,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  TableSortLabel, Pagination, TextField, Collapse
+} from '@mui/material';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { th } from 'date-fns/locale';
-import Modal from 'react-modal';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
+import thLocale from 'date-fns/locale/th';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-
-// Set up the modal root element
-Modal.setAppElement('#root');
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 function Ordersump() {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [modalIsOpen, setModalIsOpen] = useState(false);
-    const [selectedImage, setSelectedImage] = useState('');
-    const [sortColumn, setSortColumn] = useState(''); // Column to sort by
-    const [sortDirection, setSortDirection] = useState('asc'); // Sorting direction
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+  const endOfDay = new Date();
 
-    // Calculate the index range for the current page
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentOrders = orders.slice(indexOfFirstItem, indexOfLastItem);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'asc' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-    // Handle page changes
-    const handlePageChange = (pageNumber) => {
-        setCurrentPage(pageNumber);
-    };
+  const [startDate, setStartDate] = useState(startOfDay);
+  const [endDate, setEndDate] = useState(endOfDay);
 
-    // Calculate total pages
-    const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedOrderDetail, setSelectedOrderDetail] = useState(null);
 
-    const [startDateor, setStartDateor] = useState(() => {
-        const now = new Date();
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      });
-      
-      const [endDateor, setEndDateor] = useState(() => {
-        const now = new Date();
-        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      });
+  const [showCharts, setShowCharts] = useState(false);
 
-    useEffect(() => {
-        const fetchOrders = async () => {
-            setLoading(true);
-            try {
-                // Create a date range for the selected date
-                const startOfDay = startDateor.getTime();
-                const endOfDay = endDateor.getTime();
-                
-                const q = query(
-                    collection(db, 'deliveryData'),
-                    where('date', '>=', new Date(startOfDay)),
-                    where('date', '<=', new Date(endOfDay))
-                  );
-                const querySnapshot = await getDocs(q);
-                const ordersData = querySnapshot.docs.map((doc) => ({
-                    ...doc.data(),
-                    id: doc.id,
-                }));
-                setOrders(ordersData);
-            } catch (error) {
-                console.error("Error fetching data: ", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentOrders = orders.slice(indexOfFirstItem, indexOfLastItem);
 
-        fetchOrders();
-    }, []);
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const q = query(
+        collection(db, 'deliveryData'),
+        where('date', '>=', startDate),
+        where('date', '<=', endDate)
+      );
+      const querySnapshot = await getDocs(q);
+      const ordersData = querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+      setOrders(ordersData);
+    } catch (error) {
+      console.error("Error fetching data: ", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchDataByDate = async () => {
-        try {  // Create a date range for the selected date
-            const startOfDay = startDateor.getTime();
-            const endOfDay = endDateor.getTime();
-            
-            const q = query(
-                collection(db, 'deliveryData'),
-                where('date', '>=', new Date(startOfDay)),
-                where('date', '<=', new Date(endOfDay))
-              );
-            const querySnapshot = await getDocs(q);
-            const ordersData = querySnapshot.docs.map((doc) => ({
-                ...doc.data(),
-                id: doc.id,
-            }));
-            setOrders(ordersData);
-        } catch (error) {
-            console.error("Error fetching data: ", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  useEffect(() => { fetchOrders(); }, []);
 
-    const handleEndDateChange = (date) => {
-        if (endDateor > startDateor) {
-            fetchDataByDate();
-        } else {
-            toast.error("ใส่วันที่ให้ถูกต้อง");
-        }
-      };
-    
+  const handleSearch = () => {
+    if (endDate > startDate) {
+      fetchOrders();
+    } else {
+      toast.error("กรุณาเลือกวันที่ให้ถูกต้อง");
+    }
+  };
 
-    const handleToggleApproval = async (orderId, currentStatus) => {
-        const orderRef = doc(db, 'deliveryData', orderId);
-        await updateDoc(orderRef, { paidstatus: !currentStatus });
-
-        // Update the state locally to reflect the change
-        setOrders((prevOrders) =>
-            prevOrders.map((order) =>
-                order.id === orderId ? { ...order, paidstatus: !currentStatus } : order
-            )
-        );
-    };
-
-    const openModal = (imageUrl) => {
-        setSelectedImage(imageUrl);
-        setModalIsOpen(true);
-    };
-
-    const closeModal = () => {
-        setModalIsOpen(false);
-    };
-
-    const sortOrders = (column) => {
-        const direction = sortColumn === column && sortDirection === 'asc' ? 'desc' : 'asc';
-        setSortColumn(column);
-        setSortDirection(direction);
-    
-        const sortedOrders = [...orders].sort((a, b) => {
-            if (a[column] < b[column]) return direction === 'asc' ? -1 : 1;
-            if (a[column] > b[column]) return direction === 'asc' ? 1 : -1;
-            return 0;
-        });
-    
-        // Assuming you have a state or some method to update orders
-        setOrders(sortedOrders);
-    };
-    
-    const formatDatesum = (timestamp) => {
-        const date = new Date(timestamp.seconds * 1000);
-        
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = String(date.getFullYear()).slice(-2);
-      
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        
-        return `${day}/${month}/${year} ${hours}:${minutes}`;
-      };
-    
-
-    return (
-        <div className="min-h-screen bg-gray-100 flex flex-col items-center py-6 px-4 md:px-8">
-            <h2 className="text-2xl md:text-3xl font-bold mb-6">สรุปออเดอร์</h2>
-            
-
-
-    <div className="flex flex-col lg:flex-row mt-4" >
-   
-      <div className="w-full lg:w-1/3 p-4">
-        <label htmlFor="start-date" className="block text-sm font-medium mb-1">วัน/เวลาเริ่มต้น:</label>
-        <DatePicker
-          id="start-date"
-          locale={th}
-          selected={startDateor}
-          onChange={(date) => setStartDateor(date)}
-          showTimeSelect
-          dateFormat="yyyy/MM/dd HH:mm"
-          timeFormat="HH:mm"
-          timeIntervals={15}
-          className="input input-bordered w-full mb-4"
-          placeholderText="Start Date and Time"
-          renderCustomHeader={({ date, changeMonth }) => (
-            <div className="flex justify-between items-center">
-              <button onClick={() => changeMonth(date.getMonth() - 1)} className="focus:outline-none mr-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <span>{format(date, 'MMMM yyyy', { locale: th })}</span>
-              <button onClick={() => changeMonth(date.getMonth() + 1)} className="focus:outline-none ml-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          )}
-        />
-      </div>
-    
-      <div className="w-full lg:w-1/3 p-4">
-        <label htmlFor="end-date" className="block text-sm font-medium mb-1">วัน/เวลาสิ้นสุด:</label>
-        <DatePicker
-          id="end-date"
-          locale={th}
-          selected={endDateor}
-          onChange={(date) => setEndDateor(date)}
-          showTimeSelect
-          dateFormat="yyyy/MM/dd HH:mm"
-          timeFormat="HH:mm"
-          timeIntervals={15}
-          minDate={startDateor}
-          className="input input-bordered w-full mb-4"
-          placeholderText="End Date and Time"
-          renderCustomHeader={({ date, changeMonth }) => (
-            <div className="flex justify-between items-center">
-              <button onClick={() => changeMonth(date.getMonth() - 1)} className="focus:outline-none mr-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <span>{format(date, 'MMMM yyyy', { locale: th })}</span>
-              <button onClick={() => changeMonth(date.getMonth() + 1)} className="focus:outline-none ml-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          )}
-        />
-      </div>
-   
-
-<div className="w-auto lg:w-1/3 p-4 flex items-center gap-4">
-  <button className="btn btn-primary" onClick={handleEndDateChange}>
-    ค้นหาวันที่
-  </button>
-  <ToastContainer />
-</div>
-      </div>
-
-            {orders.length > 0 ? (
-                <div className="w-full max-w-4xl bg-white p-4 md:p-6 rounded-lg shadow-lg">
-                    <div className="overflow-x-auto">
-                        <table className="table-auto w-full mb-6">
-                            <thead className="bg-gray-200">
-                                <tr>
-                                
-                                <th
-                        className="py-3 px-2 md:px-4 text-left cursor-pointer"
-                        onClick={() => sortOrders('date')}
-                        >
-                        เวลา {sortColumn === 'date' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                    </th>
-
-
-                    <th
-                        className="py-3 px-2 md:px-4 text-left cursor-pointer"
-                        onClick={() => sortOrders('nameOrder')}
-                        >
-                        ชื่อ {sortColumn === 'nameOrder' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                    </th>
-                                    <th className="py-3 px-2 md:px-4 text-left">จำนวน</th>
-                                    <th className="py-3 px-2 md:px-4 text-left">ราคา</th>
-                                    <th
-                                        className="py-3 px-2 md:px-4 text-left cursor-pointer"
-                                        onClick={() => sortOrders('totalPrice')}
-                                    >
-                                        ราคารวม {sortColumn === 'totalPrice' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                                    </th>
-                                    <th
-                                        className="py-3 px-2 md:px-4 text-left cursor-pointer"
-                                        onClick={() => sortOrders('deliveryLocation')}
-                                    >
-                                        สถานที่จัดส่ง {sortColumn === 'deliveryLocation' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                                    </th>
-                                    <th className="py-3 px-2 md:px-4 text-left">เบอร์โทรศัพท์</th>
-                                    
-                                    <th
-            className="py-3 px-2 md:px-4 text-left cursor-pointer"
-            onClick={() => sortOrders('paymentProofUrl')}
-        >
-            หลักฐานการโอน {sortColumn === 'paymentProofUrl' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-        </th>
-                                    <th
-                                        className="py-3 px-2 md:px-4 text-left cursor-pointer"
-                                        onClick={() => sortOrders('paidstatus')}
-                                    >
-                                        การอนุมัติ {sortColumn === 'paidstatus' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}
-                                    </th>
-
-
-                                    <th className="py-3 px-2 md:px-4 text-left">เลขออเดอร์</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentOrders.map((order) => (
-                                    <tr key={order.id} className="border-t">
-                                        <td className="py-3 px-2 md:px-4">{formatDatesum(order.date)}</td>
-                                        <td className="py-3 px-2 md:px-4">{order.nameOrder}</td>
-                                        <td className="py-3 px-2 md:px-4">
-                                            {order.cart.map((item) => (
-                                                <div key={item.id}>
-                                                    {item.quantity} x {item.title}
-                                                </div>
-                                            ))}
-                                        </td>
-                                        <td className="py-3 px-2 md:px-4">
-                                            {order.cart.map((item) => (
-                                                <div key={item.id}>{item.price}</div>
-                                            ))}
-                                        </td>
-                                        <td className="py-3 px-2 md:px-4">{order.totalPrice.toFixed(2)}</td>
-                                        <td className="py-3 px-2 md:px-4">{order.deliveryLocation}</td>
-                                        <td className="py-3 px-2 md:px-4">{order.phoneNumber}</td>
-                                        <td className="py-3 px-2 md:px-4">
-                                            {order.paymentProofUrl ? (
-                                                <img
-                                                    src={order.paymentProofUrl}
-                                                    alt="Payment Proof"
-                                                    className="cursor-pointer w-16 h-16 md:w-24 md:h-24 object-cover"
-                                                    onClick={() => openModal(order.paymentProofUrl)}
-                                                />
-                                            ) : (
-                                                'ไม่มี'
-                                            )}
-                                        </td>
-                                        <td className="py-3 px-2 md:px-4">
-                                            <button
-                                                className={`btn ${order.paidstatus ? 'btn-danger' : 'btn-success'} w-full`}
-                                                onClick={() => handleToggleApproval(order.id, order.paidstatus)}
-                                            >
-                                                {order.paidstatus ? 'ยกเลิกการอนุมัติ' : 'อนุมัติ'}
-                                            </button>
-                                        </td>
-                                        <td className="py-3 px-2 md:px-4">{order.trackingNumber}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {/* Pagination Controls */}
-                        <div className="flex justify-between items-center">
-                            <button
-                                className="btn btn-secondary"
-                                disabled={currentPage === 1}
-                                onClick={() => handlePageChange(currentPage - 1)}
-                            >
-                                &laquo; ถอยกลับ
-                            </button>
-                            <span>หน้า {currentPage} ทั้งหมด {totalPages}</span>
-                            <button
-                                className="btn btn-secondary"
-                                disabled={currentPage === totalPages}
-                                onClick={() => handlePageChange(currentPage + 1)}
-                            >
-                                ถัดไป &raquo;
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-
-
-            ) : (
-                <p className="text-lg">ยังไม่มี Order...</p>
-            )}
-
-            {/* Modal for displaying larger image */}
-            <Modal
-                isOpen={modalIsOpen}
-                onRequestClose={closeModal}
-                contentLabel="Image Modal"
-                className="fixed inset-0 flex items-center justify-center"
-                overlayClassName="fixed inset-0 bg-black bg-opacity-50"
-            >
-                <div className="relative bg-white p-4 md:p-6 rounded-lg max-w-full max-h-full">
-                    <button
-                        className="absolute top-2 right-2 text-xl font-bold"
-                        onClick={closeModal}
-                    >
-                        &times;
-                    </button>
-                    <img
-                        src={selectedImage}
-                        alt="Larger view"
-                        className="max-w-full max-h-screen object-contain"
-                    />
-                </div>
-            </Modal>
-        </div>
+  const handleToggleApproval = async (orderId, currentStatus) => {
+    await updateDoc(doc(db, 'deliveryData', orderId), { paidstatus: !currentStatus });
+    setOrders((prev) =>
+      prev.map((order) => order.id === orderId ? { ...order, paidstatus: !currentStatus } : order)
     );
-};
+  };
+
+  const formatDatesum = (timestamp) => {
+    const date = new Date(timestamp.seconds * 1000);
+    return format(date, 'dd/MM/yy HH:mm');
+  };
+
+  const calculateApprovedSum = () => orders.filter(o => o.paidstatus).reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const calculateUnapprovedSum = () => orders.filter(o => !o.paidstatus).reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const countApprovedOrders = () => orders.filter(o => o.paidstatus).length;
+  const countUnapprovedOrders = () => orders.filter(o => !o.paidstatus).length;
+  const calculateCartTotal = (cart) => cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  return (
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={thLocale}>
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom>สรุปออเดอร์</Typography>
+
+        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+          <DateTimePicker label="วัน/เวลาเริ่มต้น" value={startDate} onChange={(newValue) => setStartDate(newValue)} renderInput={(params) => <TextField {...params} />} />
+          <DateTimePicker label="วัน/เวลาสิ้นสุด" value={endDate} onChange={(newValue) => setEndDate(newValue)} minDate={startDate} renderInput={(params) => <TextField {...params} />} />
+          <Button variant="contained" color="primary" onClick={handleSearch}>ค้นหาวันที่</Button>
+          <Button variant="outlined" onClick={() => setShowCharts(!showCharts)}>{showCharts ? 'ซ่อนกราฟ' : 'แสดงกราฟ'}</Button>
+        </Box>
+
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>เวลา</TableCell>
+                <TableCell>ชื่อ</TableCell>
+                <TableCell>ราคารวม</TableCell>
+                <TableCell>สถานที่จัดส่ง</TableCell>
+                <TableCell>การอนุมัติ</TableCell>
+                <TableCell>หลักฐาน</TableCell>
+                <TableCell>เบอร์โทร</TableCell>
+                <TableCell>เลขออเดอร์</TableCell>
+                <TableCell>รายละเอียด</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {currentOrders.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell>{formatDatesum(order.date)}</TableCell>
+                  <TableCell>{order.nameOrder}</TableCell>
+                  <TableCell>{order.totalPrice?.toFixed(2)}</TableCell>
+                  <TableCell>{order.deliveryLocation}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      color={order.paidstatus ? 'error' : 'success'}
+                      onClick={() => handleToggleApproval(order.id, order.paidstatus)}
+                    >
+                      {order.paidstatus ? 'ยกเลิก' : 'อนุมัติ'}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    {order.paymentProofUrl ? (
+                      <img
+                        src={order.paymentProofUrl}
+                        alt="proof"
+                        style={{ width: 60, height: 60, objectFit: 'cover', cursor: 'pointer' }}
+                        onClick={() => { setSelectedImage(order.paymentProofUrl); setModalOpen(true); }}
+                      />
+                    ) : 'ไม่มี'}
+                  </TableCell>
+                  <TableCell>{order.phoneNumber}</TableCell>
+                  <TableCell>{order.trackingNumber}</TableCell>
+                  <TableCell>
+                    <Button variant="outlined" onClick={() => { setSelectedOrderDetail(order); setDetailOpen(true); }}>ดูรายละเอียด</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+            <Pagination count={Math.ceil(orders.length / itemsPerPage)} page={currentPage} onChange={(e, page) => setCurrentPage(page)} color="primary" />
+          </Box>
+        </TableContainer>
+
+        <Collapse in={showCharts}>
+          <Box sx={{ my: 4 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>📊 สรุปยอดรวมราคาทั้งหมด</Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'อนุมัติแล้ว', value: calculateApprovedSum() },
+                    { name: 'ยังไม่อนุมัติ', value: calculateUnapprovedSum() }
+                  ]}
+                  cx="50%" cy="50%" outerRadius={100}
+                  dataKey="value"
+                  label
+                >
+                  <Cell fill="#4caf50" />
+                  <Cell fill="#ff9800" />
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+
+            <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>📦 สรุปจำนวนออเดอร์</Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'อนุมัติแล้ว', value: countApprovedOrders() },
+                    { name: 'ยังไม่อนุมัติ', value: countUnapprovedOrders() }
+                  ]}
+                  cx="50%" cy="50%" outerRadius={100}
+                  dataKey="value"
+                  label
+                >
+                  <Cell fill="#2196f3" />
+                  <Cell fill="#f44336" />
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </Box>
+        </Collapse>
+
+        <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="lg">
+          <DialogTitle>หลักฐานการโอน</DialogTitle>
+          <DialogContent>
+            <img src={selectedImage} alt="Proof" style={{ width: '100%' }} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setModalOpen(false)}>ปิด</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="md" fullWidth>
+          <DialogTitle>รายละเอียดออเดอร์</DialogTitle>
+          <DialogContent dividers>
+            {selectedOrderDetail?.cart?.map((item, index) => (
+              <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+                <Typography><strong>ชื่อสินค้า:</strong> {item.title}</Typography>
+                <Typography><strong>รหัสสินค้า:</strong> {item.pid}</Typography>
+                <Typography><strong>จำนวน:</strong> {item.quantity}</Typography>
+                <Typography><strong>ราคา:</strong> {item.price}</Typography>
+                <Typography><strong>รวม:</strong> {(item.price * item.quantity).toFixed(2)}</Typography>
+                <Typography><strong>คำอธิบาย:</strong> {item.description}</Typography>
+                {item.imageUrl && <img src={item.imageUrl} alt={item.title} style={{ width: '100px', marginTop: 8 }} />}
+              </Box>
+            ))}
+            <Box sx={{ mt: 2, textAlign: 'right' }}>
+              <Typography variant="h6">
+                ✅ ราคารวมทั้งออเดอร์: {selectedOrderDetail ? calculateCartTotal(selectedOrderDetail.cart).toFixed(2) : 0} บาท
+              </Typography>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDetailOpen(false)}>ปิด</Button>
+          </DialogActions>
+        </Dialog>
+
+        <ToastContainer />
+      </Box>
+    </LocalizationProvider>
+  );
+}
 
 export default Ordersump;

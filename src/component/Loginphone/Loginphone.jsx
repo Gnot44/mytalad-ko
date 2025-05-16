@@ -1,194 +1,186 @@
-// src/component/Login/LoginPhone.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { getAuth, signInWithCustomToken } from 'firebase/auth';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../firebase';
+import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
+import {
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Checkbox,
+  FormControlLabel,
+  CircularProgress,
+  Box,
+  Link as MuiLink,
+} from '@mui/material';
 
-const LoginPhone = ({ onLogin, isDarkTheme }) => {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [otp, setOtp] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState(null);
-  const [step, setStep] = useState(1);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+const LoginPhone = ({ onLogin }) => {
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const auth = getAuth();
+  const [nameError, setNameError] = useState('');
 
-  // Initialize reCAPTCHA verifier
-  const setupRecaptcha = useCallback(() => {
-    if (window.recaptchaVerifier) {
-      window.recaptchaVerifier.clear();
-    }
-    
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-      callback: () => {
-        setError('');
-      },
-      'expired-callback': () => {
-        setError('reCAPTCHA หมดอายุ กรุณาลองใหม่');
-      }
-    });
-  }, [auth]);
+  const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
-    setupRecaptcha();
-    
-    // Cleanup on component unmount
-    return () => {
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = null;
-      }
-    };
-  }, [setupRecaptcha]);
-
-  // Validate phone number format
-  const validatePhoneNumber = (number) => {
-    const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    return phoneRegex.test(number);
-  };
-
-  const sendOTP = async () => {
-    if (!validatePhoneNumber(phoneNumber)) {
-      setError('กรุณากรอกเบอร์โทรในรูปแบบ +66xxxxxxxxx');
-      return;
+    const savedName = localStorage.getItem('savedName');
+    const savedPassword = localStorage.getItem('savedPassword');
+    if (savedName && savedPassword) {
+      setName(savedName);
+      setPassword(savedPassword);
+      setRemember(true);
     }
+  }, []);
 
-    setIsLoading(true);
-    setError('');
+  const normalizeNameOrPhone = (input) => {
+  return input.trim(); // ✅ ไม่ต้องแปลงอะไร ฝั่ง server handle เอง
+};
 
-    try {
-      await window.recaptchaVerifier.verify();
-      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier);
-      setConfirmationResult(confirmation);
-      setStep(2);
-    } catch (error) {
-      console.error('Error sending OTP:', error);
-      let errorMessage = 'ไม่สามารถส่งรหัส OTP ได้';
-      
-      switch (error.code) {
-        case 'auth/invalid-phone-number':
-          errorMessage = 'เบอร์โทรศัพท์ไม่ถูกต้อง';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'ส่งคำขอบ่อยเกินไป กรุณารอสักครู่';
-          break;
-        default:
-          errorMessage = error.message;
-      }
-      
-      setError(errorMessage);
-      setupRecaptcha();
-    } finally {
-      setIsLoading(false);
+
+  // ✅ Real-time Validate input
+  const validateNameInput = (value) => {
+    if (!value.trim()) {
+      setNameError('กรุณากรอกชื่อผู้ใช้หรือเบอร์โทร');
+    } else if (/^\d+$/.test(value) && !/^0[689]\d{8}$/.test(value)) {
+      setNameError('เบอร์โทรไม่ถูกต้อง ควรเป็น 0XXXXXXXXX');
+    } else {
+      setNameError('');
     }
   };
 
-  const verifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      setError('กรุณากรอกรหัส OTP 6 หลัก');
+  const handleLogin = async () => {
+    validateNameInput(name);
+
+    if (!name.trim() || !password.trim() || nameError) {
+      enqueueSnackbar('กรุณากรอกข้อมูลให้ถูกต้อง', { variant: 'error' });
       return;
     }
 
-    setIsLoading(true);
-    setError('');
+    const loginName = normalizeNameOrPhone(name);
 
     try {
-      const result = await confirmationResult.confirm(otp);
-      const user = result.user;
-      const userData = {
-        uid: user.uid,
-        phone: user.phoneNumber,
-        role: 'customer' // Consider fetching role from backend instead
-      };
-      onLogin(userData);
-    } catch (error) {
-      console.error('OTP verification failed:', error);
-      let errorMessage = 'รหัส OTP ไม่ถูกต้อง';
-      
-      switch (error.code) {
-        case 'auth/invalid-verification-code':
-          errorMessage = 'รหัส OTP ไม่ถูกต้อง';
-          break;
-        case 'auth/code-expired':
-          errorMessage = 'รหัส OTP หมดอายุ';
-          setStep(1);
-          setupRecaptcha();
+      setLoading(true);
+
+      const loginFunc = httpsCallable(functions, 'loginWithName');
+      const response = await loginFunc({
+        name: loginName,
+        password: password.trim()
+      });
+
+      const { token, role, issuedAt } = response.data || {};
+
+      if (!token || !role) {
+        throw new Error('ไม่สามารถรับข้อมูลผู้ใช้หรือ Token ได้ กรุณาติดต่อผู้ดูแลระบบ');
+      }
+
+      await signInWithCustomToken(getAuth(), token);
+
+      if (remember) {
+        localStorage.setItem('savedName', name.trim());
+        localStorage.setItem('savedPassword', password.trim());
+      } else {
+        localStorage.removeItem('savedName');
+        localStorage.removeItem('savedPassword');
+      }
+
+      enqueueSnackbar('เข้าสู่ระบบสำเร็จ', { variant: 'success' });
+
+      onLogin({ token, role, issuedAt: issuedAt || Date.now() });
+
+    } catch (err) {
+      console.error('Login error:', err);
+
+      switch (err.code) {
+        case 'functions/invalid-argument':
+        case 'functions/not-found':
+        case 'functions/unauthenticated':
+        case 'functions/failed-precondition':
+          enqueueSnackbar(err.message, { variant: 'error' });
           break;
         default:
-          errorMessage = error.message;
+          enqueueSnackbar(err.message || 'เกิดข้อผิดพลาด ไม่สามารถเข้าสู่ระบบได้', { variant: 'error' });
       }
-      
-      setError(errorMessage);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center ${isDarkTheme ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
-      <div className="w-full max-w-md p-6 bg-base-100 rounded-xl shadow-md">
-        <h2 className="text-xl font-semibold text-center mb-4">เข้าสู่ระบบด้วยเบอร์โทรศัพท์</h2>
-        
-        {error && (
-          <div className="alert alert-error mb-4">
-            <span>{error}</span>
-          </div>
-        )}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f4f6f8',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Card sx={{ width: 400, p: 3, boxShadow: 4, borderRadius: 2 }}>
+        <CardContent>
+          <Typography variant="h4" align="center" gutterBottom>
+            เข้าสู่ระบบ
+          </Typography>
+          <TextField
+            label="ชื่อผู้ใช้ หรือ เบอร์โทร (0XXXXXXXXX)"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              validateNameInput(e.target.value);
+            }}
+            error={!!nameError}
+            // helperText={nameError || 'ตัวอย่าง: 0964105303 หรือ username123'}
+          />
+          <TextField
+            label="รหัสผ่าน"
+            variant="outlined"
+            type="password"
+            fullWidth
+            margin="normal"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <FormControlLabel
+            control={<Checkbox checked={remember} onChange={(e) => setRemember(e.target.checked)} />}
+            label="จำชื่อผู้ใช้และรหัสผ่าน"
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={handleLogin}
+            disabled={loading}
+            sx={{ mt: 2 }}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'เข้าสู่ระบบ'}
+          </Button>
 
-        {step === 1 && (
-          <>
-            <input
-              type="tel"
-              placeholder="กรอกเบอร์โทร เช่น +66912345678"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="input input-bordered w-full mb-4"
-              disabled={isLoading}
-            />
-            <div id="recaptcha-container" />
-            <button
-              className="btn btn-primary w-full"
-              onClick={sendOTP}
-              disabled={isLoading || !phoneNumber}
-            >
-              {isLoading ? 'กำลังส่ง...' : 'ส่ง OTP'}
-            </button>
-          </>
-        )}
-        
-        {step === 2 && (
-          <>
-            <input
-              type="text"
-              placeholder="กรอกรหัส OTP 6 หลัก"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className="input input-bordered w-full mb-4"
-              disabled={isLoading}
-              maxLength={6}
-            />
-            <button
-              className="btn btn-success w-full"
-              onClick={verifyOTP}
-              disabled={isLoading || otp.length !== 6}
-            >
-              {isLoading ? 'กำลังตรวจสอบ...' : 'ยืนยัน OTP'}
-            </button>
-            <button
-              className="btn btn-ghost w-full mt-2"
-              onClick={() => {
-                setStep(1);
-                setOtp('');
-                setupRecaptcha();
-              }}
-              disabled={isLoading}
-            >
-              กลับไปส่ง OTP ใหม่
-            </button>
-          </>
-        )}
-      </div>
-    </div>
+          <Button
+            variant="text"
+            fullWidth
+            onClick={() => navigate('/resetpassword')}
+            sx={{ mt: 1 }}
+          >
+            ลืมรหัสผ่าน?
+          </Button>
+
+          <Typography variant="body2" align="center" sx={{ mt: 3 }}>
+            ยังไม่มีบัญชี?{' '}
+            <MuiLink component="button" variant="body2" onClick={() => navigate('/register')} sx={{ fontWeight: 'bold' }}>
+              สมัครสมาชิก
+            </MuiLink>
+          </Typography>
+        </CardContent>
+      </Card>
+    </Box>
   );
 };
 

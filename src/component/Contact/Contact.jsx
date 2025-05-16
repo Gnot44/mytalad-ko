@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db, storage } from '../../firebase'; // Import storage from firebase
-import DatePicker from 'react-datepicker';
+// import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { th } from 'date-fns/locale';
 import { format } from 'date-fns';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import thLocale from 'date-fns/locale/th';
+import { TextField } from '@mui/material';
 
 const Contact = ({ isDarkTheme, updateDeliveryCount, Load_iy }) => {
   const [deliveryData, setDeliveryData] = useState([]);
@@ -86,10 +90,10 @@ const Contact = ({ isDarkTheme, updateDeliveryCount, Load_iy }) => {
       await updateDoc(docRef, { imageUrl });
 
       // Update local state
-      setDeliveryData(deliveryData.map(item => 
+      setDeliveryData(deliveryData.map(item =>
         item.id === itemId ? { ...item, imageUrl } : item
       ));
-      setSuccessList(successList.map(item => 
+      setSuccessList(successList.map(item =>
         item.id === itemId ? { ...item, imageUrl } : item
       ));
     }
@@ -145,14 +149,14 @@ const Contact = ({ isDarkTheme, updateDeliveryCount, Load_iy }) => {
 
   const formatDate = (timestamp) => {
     const date = new Date(timestamp.seconds * 1000);
-    
+
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = String(date.getFullYear()).slice(-2);
-  
+
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    
+
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
@@ -165,30 +169,36 @@ const Contact = ({ isDarkTheme, updateDeliveryCount, Load_iy }) => {
         <div className="flex-1 p-2 overflow-auto" style={{ maxHeight: "calc(100vh - 100px)" }}>
           <h1 className="text-lg font-bold mb-4" style={allStyle}>
             {/* Date Picker Section */}
-            <label className="block mb-2">เลือกวันที่ :
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={thLocale}>
               <DatePicker
-                selected={selectedDate}
-                onChange={(date) => setSelectedDate(date)}
-                dateFormat="dd/MM/yyyy"
-                locale={th} // Apply Thai localization
-                className={`input input-bordered w-full md:w-auto ${selectedDate ? 'selected-text-color' : ''}`}
-                renderCustomHeader={({ date, changeMonth, changeYear }) => (
-                  <div>
-                    <button onClick={() => changeMonth(date.getMonth() - 1)} className="focus:outline-none mr-5">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span>{format(date, 'MMMM yyyy', { locale: th })}</span>
-                    <button onClick={() => changeMonth(date.getMonth() + 1)} className="focus:outline-none ml-5">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
+                label="เลือกวันที่"
+                value={selectedDate}
+                onChange={(newValue) => setSelectedDate(newValue)}
+                format="dd/MM/yyyy"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    variant: 'outlined',
+                    sx: {
+                      '& input': {
+                        color: isDarkTheme ? 'white' : 'black',  // ตัววันที่ที่พิมพ์/แสดง
+                        '::placeholder': {
+                          color: isDarkTheme ? 'white' : 'black',  // placeholder (ถ้าใช้)
+                          opacity: 1,
+                        },
+                      },
+                      '& label': {
+                        color: isDarkTheme ? 'white' : 'black',  // Label ด้านบน
+                      },
+                      '& fieldset': {
+                        borderColor: isDarkTheme ? 'white' : 'black',  // ขอบ input
+                      },
+                    },
+                  },
+                }}
               />
-            </label>
+            </LocalizationProvider>
+
             ยังไม่ได้ส่ง : {deliveryData.length}
           </h1>
           {deliveryData.map((data, index) => (
@@ -209,37 +219,37 @@ const Contact = ({ isDarkTheme, updateDeliveryCount, Load_iy }) => {
                         </li>
                       ))}
                     </ul>
-                      {/* Display latitude and longitude with a button to open Google Maps */}
-          {data.latitude && data.longitude && (
-            <div className="card-title mt-4">
-              <button
-                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`, '_blank')}
-                className="btn btn-primary"
-              >
-                ลิงค์ไปแผนที่
-              </button>
-            </div>
-          )}
+                    {/* Display latitude and longitude with a button to open Google Maps */}
+                    {data.latitude && data.longitude && (
+                      <div className="card-title mt-4">
+                        <button
+                          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`, '_blank')}
+                          className="btn btn-primary"
+                        >
+                          ลิงค์ไปแผนที่
+                        </button>
+                      </div>
+                    )}
                     {data.imageUrl && (
-            <div className="card-image cursor-pointer mb-4" onClick={() => handleImageClick(data.imageUrl)}>
-              <img src={data.imageUrl} alt="Delivery" className="w-32 h-32 object-cover rounded-md shadow-md" />
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileChange(e, data.id)}
-            className="input input-bordered w-full max-w-xs mt-2"
-          />
-  
+                      <div className="card-image cursor-pointer mb-4" onClick={() => handleImageClick(data.imageUrl)}>
+                        <img src={data.imageUrl} alt="Delivery" className="w-32 h-32 object-cover rounded-md shadow-md" />
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileChange(e, data.id)}
+                      className="input input-bordered w-full max-w-xs mt-2"
+                    />
+
                     <div className="card-actions justify-end">
-                    <button
-  className={`btn ${data.paidstatus ? 'btn-primary' : 'btn-disabled'}`} // Add btn-primary class for paidstatus = true, btn-disabled otherwise
-  onClick={() => handleConfirm(index)}
-  disabled={!data.paidstatus} // Disable button if paidstatus is false
->
-  ส่งเสร็จ
-</button>
+                      <button
+                        className={`btn ${data.paidstatus ? 'btn-primary' : 'btn-disabled'}`} // Add btn-primary class for paidstatus = true, btn-disabled otherwise
+                        onClick={() => handleConfirm(index)}
+                        disabled={!data.paidstatus} // Disable button if paidstatus is false
+                      >
+                        ส่งเสร็จ
+                      </button>
 
                     </div>
                   </div>
@@ -256,7 +266,7 @@ const Contact = ({ isDarkTheme, updateDeliveryCount, Load_iy }) => {
           <button className="btn btn-secondary mb-4" onClick={toggleContentVisibility}>
             {isContentVisible ? 'ซ่อนเนื้อหา' : 'แสดงเนื้อหา'}
           </button>
-          
+
           <ul>
             {successList.map((data, index) => (
               data && (
@@ -279,31 +289,31 @@ const Contact = ({ isDarkTheme, updateDeliveryCount, Load_iy }) => {
                               </li>
                             ))}
                           </ul>
-                           {/* Display latitude and longitude with a button to open Google Maps */}
-          {data.latitude && data.longitude && (
-            <div className="card-title mt-4">
-              <button
-                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`, '_blank')}
-                className="btn btn-primary"
-              >
-                ลิงค์ไปแผนที่
-              </button>
-            </div>
-          )}
-                        
-                        {data.imageUrl && (
-            <div className="card-image cursor-pointer mb-4" onClick={() => handleImageClick(data.imageUrl)}>
-              <img src={data.imageUrl} alt="Delivery" className="w-32 h-32 object-cover rounded-md shadow-md" />
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileChange(e, data.id)}
-            className="input input-bordered w-full max-w-xs mt-2"
-          />
-          </>
-        )}
+                          {/* Display latitude and longitude with a button to open Google Maps */}
+                          {data.latitude && data.longitude && (
+                            <div className="card-title mt-4">
+                              <button
+                                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`, '_blank')}
+                                className="btn btn-primary"
+                              >
+                                ลิงค์ไปแผนที่
+                              </button>
+                            </div>
+                          )}
+
+                          {data.imageUrl && (
+                            <div className="card-image cursor-pointer mb-4" onClick={() => handleImageClick(data.imageUrl)}>
+                              <img src={data.imageUrl} alt="Delivery" className="w-32 h-32 object-cover rounded-md shadow-md" />
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileChange(e, data.id)}
+                            className="input input-bordered w-full max-w-xs mt-2"
+                          />
+                        </>
+                      )}
                       <div className="card-actions justify-end">
                         <button className="btn btn-primary" onClick={() => handleBackConfirm(index)}>กลับ</button>
                       </div>
@@ -320,7 +330,7 @@ const Contact = ({ isDarkTheme, updateDeliveryCount, Load_iy }) => {
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50" onClick={closeModal}>
           <div className="relative">
             <img src={modalImage} alt="Large" className="max-w-screen-sm max-h-screen object-contain" />
-            <button 
+            <button
               className="absolute top-2 right-2 bg-white p-2 rounded-full text-black"
               onClick={closeModal}
             >
@@ -332,7 +342,7 @@ const Contact = ({ isDarkTheme, updateDeliveryCount, Load_iy }) => {
         </div>
       )}
     </div>
-    
+
 
 
   );

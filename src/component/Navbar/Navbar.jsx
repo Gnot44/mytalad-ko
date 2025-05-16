@@ -1,213 +1,138 @@
 import React, { useState } from 'react';
-import profileImage from './0044E069-2400-48B0-99D5-3FF33FC3228B.jpg';
+import { AppBar, Toolbar, IconButton, Typography, Menu, MenuItem, Avatar, Badge, Tooltip, Switch, Box, Drawer, List, ListItem, ListItemText } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { Link } from 'react-router-dom';
-import iavatar from './3941A5C4-CA39-4544-86E3-963E55BD4D1A.png';
+import profileImage from './3941A5C4-CA39-4544-86E3-963E55BD4D1A.png';
 
-const Navbar = ({ isDarkTheme, toggleTheme, currentDateTime, deliveryCount,
-  onLogout,user }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const isAdminnav = user?.role === 'admin'; // Assuming user object has a role property
-  const isUsernav = user?.role === 'user'; // Assuming user object has
-  const isCustnav = user?.role === 'customer'; // Assuming user object has a role property
+const Navbar = ({ isDarkTheme, toggleTheme, currentDateTime, deliveryCount, onLogout, user }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const navStyle = {
-    color: isDarkTheme ? '#FFFFFF' : '#000000', // ตัวอักษรสีขาวในโหมดมืด สีดำในโหมดสว่าง
-    backgroundColor: isDarkTheme ? '#1A1A2E' : '#FFFFFF', // พื้นหลังโหมดมืด/สว่าง
-    border: isDarkTheme ? '2px solid #2E2E3A' : '2px solid #E0E0E0', // ขอบสีเข้มในโหมดมืดและสีเทาอ่อนในโหมดสว่าง
-    borderRadius: '15px', // ขอบโค้งมน
-    boxShadow: isDarkTheme ? '0 6px 12px rgba(0, 0, 0, 0.5)' : '0 6px 12px rgba(0, 0, 0, 0.1)', // เงาเข้มในโหมดมืดและเงาอ่อนในโหมดสว่าง
-    transition: 'color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease', // เพิ่มการเปลี่ยนแปลงนุ่มนวลสำหรับเงา
-    fontFamily: 'IBM Plex Sans Thai, sans-serif', // ฟอนต์ไทยที่ทันสมัย
-    fontSize: '20px', // ขนาดตัวอักษร
-    padding: '1rem', // เพิ่ม padding ให้สวยงาม
-    margin: '1rem', // เพิ่ม margin เพื่อให้เนื้อหาดูไม่อัดแน่น
+  const isAdmin = user?.role === 'admin';
+  const isUser = user?.role === 'user';
+  const isCustomer = user?.role === 'customer';
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  const LogStyle = {
-    backgroundColor: isDarkTheme ? '#1A1A2E' : '#E0F2F1',
-    color: isDarkTheme ? '#FFFFFF' : '#000000',
-    transition: 'background-color 0.3s ease',
-    fontFamily: 'Baskervville SC, serif',
-    justifyContent: 'space-between',
-    padding: '10px',
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
-  const frontStyle = {
-    color: isDarkTheme ? '#FFFFFF' : '#000000',
-    transition: 'color 0.3s ease',
-    fontFamily: 'IBM Plex Sans Thai, sans-serif',
-  };
-
-  const highlightText = (text, query) => {
-    if (!query) return text;
-    const parts = text.split(new RegExp(`(${query})`, 'gi'));
-    return parts.map((part, index) =>
-      part.toLowerCase() === query.toLowerCase() ? <mark key={index}>{part}</mark> : part
-    );
-  };
-
-  const ThemeToggle = () => (
-    <label className="swap swap-rotate flex items-center">
-      <input
-        type="checkbox"
-        checked={isDarkTheme}
-        onChange={toggleTheme}
-        className="hidden"
-      />
-      <span className="toggle-label ml-2 cursor-pointer" style={frontStyle}>
-        {isDarkTheme ? '🌙' : '☀️'}
-      </span>
-    </label>
-  );
-
-  const handleImageClick = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-  };
+  const menuItems = [
+    { label: 'หน้าแรก', path: '/sidebar', show: isAdmin || isCustomer },
+    { label: 'สรุป', path: '/summandpay', show: isCustomer },
+    { label: 'ออเดอร์', path: '/ordersump', show: isAdmin },
+    { label: 'เช็คสถานะ', path: '/timeline', show: isCustomer },
+    { label: 'ส่ง', path: '/contact', show: isAdmin || isUser },
+    { label: 'รวมผัก', path: '/condata', show: isAdmin || isUser },
+  ].filter(item => item.show);
 
   return (
-    <div 
-    className="navbar bg-blue-500 flex flex-col md:flex-row items-center" 
-    style={{ ...navStyle, width: '100%' }}  // ปรับความกว้างเป็น 80% หรือคุณสามารถเปลี่ยนเป็นค่าที่ต้องการ
-  >
-  <div className="flex items-center w-full md:w-auto mb-2 md:mb-0">
-    <div className="w-10 h-10 rounded-full overflow-hidden mr-2" onClick={handleImageClick}>
-      <img
-        alt="Profile"
-        src={profileImage}
-        className="w-full h-full object-cover cursor-pointer"
-      />
-    </div>
-    {(isAdminnav || isCustnav) && (
-      <a className="btn btn-ghost text-white text-xl hover:bg-blue-400" style={frontStyle}>
-        <Link to="/sidebar">หน้าแรก</Link>
-      </a>
-    )}
-    {isCustnav && (
-      <a className="btn btn-ghost text-white text-xl hover:bg-blue-400" style={frontStyle}>
-        <Link to="/summandpay">สรุป</Link>
-      </a>
-    )}
-    {isAdminnav && (
-      <a className="btn btn-ghost text-white text-xl hover:bg-blue-400" style={frontStyle}>
-        <Link to="/ordersump">ออเดอร์</Link>
-      </a>
-    )}
-    {isCustnav && (
-      <a className="btn btn-ghost text-white text-xl hover:bg-blue-400" style={frontStyle}>
-        <Link to="/timeline">เช็คสถานะ</Link>
-      </a>
-    )}
-    {user ? (
-      <>
-        {(isAdminnav || isUsernav) && (
-          <a className="btn btn-ghost text-white text-xl hover:bg-blue-400" style={frontStyle}>
-            <Link to="/contact">ส่ง</Link>
-          </a>
-        )}
-        {(isAdminnav || isUsernav) && (
-          <a className="btn btn-ghost text-white text-xl hover:bg-blue-400" style={frontStyle}>
-            <Link to="/condata">รวมผัก</Link>
-          </a>
-        )}
-      </>
-    ) : null}
-  </div>
-
-
-
-  
-  <div className="flex items-center">
-    <div className="datetime ml-2 text-white" style={frontStyle}>
-      {currentDateTime.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} {' '}
-      {currentDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-    </div>
-    {user ? (
-      <>
-        <div className="dropdown dropdown-end">
-          <div tabIndex={0} role="button" className="btn btn-ghost btn-circle text-white hover:bg-blue-400">
-            {(isAdminnav || isUsernav) && (
-              <div className="indicator">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="badge badge-sm indicator-item">{deliveryCount}</span>
-              </div>
-            )}
-          </div>
-          {(isAdminnav || isUsernav) && (
-            <div
-              tabIndex={0}
-              className="card card-compact dropdown-content bg-blue-300 text-white z-[1] mt-3 w-full sm:w-52 shadow-lg p-4 mx-2 sm:mx-0">
-              <div className="card-body">
-                <span className="text-lg font-bold">{deliveryCount} ที่ยังไม่ได้ส่ง</span>
-                <span className="text-info">Subtotal: $99</span>
-                <div className="card-actions">
-                  <button className="btn btn-primary btn-block mt-2 bg-blue-400 hover:bg-blue-500">View cart</button>
-                </div>
-              </div>
-            </div>
+    <AppBar position="static" color="default" sx={{
+      bgcolor: isDarkTheme ? '#1A1A2E' : '#FFFFFF', color: isDarkTheme ? '#FFFFFF' : '#000000',  // ✅ เพิ่มตรงนี้
+      boxShadow: 3
+    }}>
+      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', }}>
+        {/* Left Section */}
+        
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+           {user && (
+            <>
+            <IconButton onClick={() => setDrawerOpen(true)} color="inherit">
+              <MenuIcon />
+            </IconButton>
+          </>
           )}
-        </div>
-      </>
-    ) : null}
-    
-    <ThemeToggle />
-    {user ? (
-   <div className="relative z-10 flex justify-end">
-   <ul className="menu menu-horizontal px-1">
-     <li>
-       <details className="group">
-         <summary className="cursor-pointer flex items-center">
-           <img
-             src={iavatar || 'default-avatar.png'}
-             alt="Profile"
-             className="w-8 h-8 rounded-full"
-           />
-         </summary>
- 
-         <ul className="dropdown-content mt-1 p-2 bg-[#E6F7F8] text-black shadow rounded-box w-24 opacity-0 group-open:opacity-100 transition-opacity duration-300 ease-in-out">
-           <li>
-             <a className="dropdown-item hover:bg-[#D1EEF0] p-2 rounded" href="#profile">Profile</a>
-           </li>
-           <li onClick={onLogout}>
-             <a className="dropdown-item hover:bg-[#D1EEF0] p-2 rounded" href="#logout">Logout</a>
-           </li>
-         </ul>
- 
-       </details>
-     </li>
-   </ul>
- </div>
- 
-   
+          <Typography variant="h6" sx={{ ml: 1 }}>
+            {currentDateTime.toLocaleDateString('en-GB')} {currentDateTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </Typography>
+        </Box>
 
-    ) : null}
-  </div>
-  {isModalOpen && (
-    <div className="modal modal-open">
-      <div className="modal-box bg-blue-500 text-white">
-        <img alt="Profile Large" src={profileImage} className="w-full h-full object-cover" />
-        <div className="modal-action">
-          <button className="btn bg-blue-400 hover:bg-blue-500" onClick={handleCloseModal}>ปิด</button>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
+        {/* Right Section */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {(isAdmin || isUser) && (
+            <Tooltip title="รายการที่ยังไม่ได้ส่ง">
+              <IconButton color="inherit">
+                <Badge badgeContent={deliveryCount} color="error">
+                  <ShoppingCartIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+          )}
 
+          <Tooltip title="เปลี่ยนธีม">
+            <Switch
+              checked={isDarkTheme}
+              onChange={toggleTheme}
+              icon={<LightModeIcon />}
+              checkedIcon={<DarkModeIcon />}
+            />
+          </Tooltip>
+
+          {user && (
+            <>
+              <Tooltip title="เมนูผู้ใช้">
+                <IconButton onClick={handleMenuOpen} size="small">
+                  <Avatar src={profileImage} />
+                </IconButton>
+              </Tooltip>
+              <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                <MenuItem onClick={handleMenuClose}>โปรไฟล์</MenuItem>
+                <MenuItem onClick={() => { handleMenuClose(); onLogout(); }}>ออกจากระบบ</MenuItem>
+              </Menu>
+            </>
+          )}
+        </Box>
+      </Toolbar>
+
+      {/* Drawer Menu */}
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: isDarkTheme ? '#1A1A2E' : '#FFFFFF',
+            color: isDarkTheme ? '#FFFFFF' : '#000000',
+          }
+        }}
+      >
+        <Box
+          sx={{ width: 250 }}
+          role="presentation"
+          onClick={() => setDrawerOpen(false)}
+        >
+          <List>
+            {menuItems.map((item, index) => (
+              <ListItem
+                button
+                key={index}
+                component={Link}
+                to={item.path}
+                sx={{
+                  '&:hover': {
+                    bgcolor: isDarkTheme ? '#2D2A55' : '#f0f0f0',
+                  },
+                  color: isDarkTheme ? '#FFFFFF' : '#000000',
+                }}
+              >
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    sx: { color: isDarkTheme ? '#FFFFFF' : '#000000' }
+                  }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
+    </AppBar>
   );
 };
 
