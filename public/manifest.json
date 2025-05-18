@@ -3,12 +3,12 @@
     "short_name": "ผักbyบ.เบิร์ด",
     "description": "ร้านขายผักออนไลน์ บ.เบิร์ด",
     "icons": [{
-            "src": "/F670078E-C508-4C2F-9D8B-26B16215632D.png",
+            "src": "/birdpkc.png",
             "type": "image/png",
             "sizes": "192x192"
         },
         {
-            "src": "/F670078E-C508-4C2F-9D8B-26B16215632D.png",
+            "src": "/birdpkc.png",
             "type": "image/png",
             "sizes": "512x512"
         }

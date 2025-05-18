@@ -1,3 +1,4 @@
+// SummandPayPage.jsx — รองรับ Theme (Dark/Light) + i18n
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
@@ -9,12 +10,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
     Button, Container, Typography, TextField, Box, Paper, TableContainer, Table, TableHead,
-    TableBody, TableRow, TableCell, Dialog, DialogTitle, DialogContent, DialogActions
+    TableBody, TableRow, TableCell, Dialog, DialogTitle, DialogContent, DialogActions, useTheme
 } from '@mui/material';
 import { toast, ToastContainer } from 'react-toastify';
 import { getAuth } from 'firebase/auth';
+import { useTranslation } from 'react-i18next';
 
-
+// Default Leaflet Icon Fix
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
@@ -31,6 +33,9 @@ const LocationSetter = ({ setLatLng, centerLatLng }) => {
 };
 
 const SummandPayPage = () => {
+    const theme = useTheme();
+    const { t } = useTranslation();
+
     const [paymentData, setPaymentData] = useState(null);
     const [deliveryLocation, setDeliveryLocation] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -45,7 +50,7 @@ const SummandPayPage = () => {
     const [userDocId, setUserDocId] = useState(null);
     const [errors, setErrors] = useState({});
 
-     const navigate = useNavigate();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -59,21 +64,18 @@ const SummandPayPage = () => {
                     const userData = docSnap.data();
                     setUserDocId(docSnap.id);
                     setNameOrder(userData.name || '');
-
-                    // ✅ แปลง +66 เป็น 0
                     const rawPhone = userData.phone || '';
                     const formattedPhone = rawPhone.startsWith('+66') ? '0' + rawPhone.slice(3) : rawPhone;
                     setPhoneNumber(formattedPhone);
                 } else {
-                    toast.info('ไม่พบข้อมูลผู้ใช้ใน credentials');
+                    toast.info(t('summary.errors.userNotFound'));
                 }
             } catch (error) {
                 console.error('Error fetching user info from credentials:', error);
             }
         };
-
         fetchUserInfo();
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         const data = localStorage.getItem('paymentData');
@@ -87,16 +89,15 @@ const SummandPayPage = () => {
             setErrors(prev => ({ ...prev, paymentProof: false }));
         }
     };
+
     const generateTrackingNumber = () => `BP${Math.floor(1000000000 + Math.random() * 9000000000)}`;
 
     const handleSaveInfo = async () => {
         const uid = getAuth().currentUser?.uid;
         if (!uid) {
-            toast.error('ไม่พบผู้ใช้งาน กรุณาล็อกอิน');
+            toast.error(t('summary.errors.userNotFound'));
             return;
         }
-
-        // ✅ ตรวจสอบทุกฟิลด์
         const newErrors = {
             nameOrder: !nameOrder.trim(),
             deliveryLocation: !deliveryLocation.trim(),
@@ -104,14 +105,11 @@ const SummandPayPage = () => {
             latLng: !latLng.lat || !latLng.lng,
             paymentProof: !paymentProof,
         };
-
         setErrors(newErrors);
-
         if (Object.values(newErrors).some((val) => val)) {
-            toast.error('กรุณากรอกข้อมูลให้ครบ และแนบหลักฐานการโอนครับ');
+            toast.error(t('summary.errors.incomplete'));
             return;
         }
-
         if (isSaving) return;
         setIsSaving(true);
 
@@ -125,7 +123,7 @@ const SummandPayPage = () => {
             paymentProofUrl = await getDownloadURL(storageRef);
         } catch (error) {
             console.error('Error uploading payment proof:', error);
-            toast.error('อัปโหลดหลักฐานล้มเหลว');
+            toast.error(t('summary.errors.uploadFailed'));
             setIsSaving(false);
             return;
         }
@@ -145,20 +143,18 @@ const SummandPayPage = () => {
                 longitude: latLng.lng,
                 uid,
             });
-            toast.success('บันทึกข้อมูลสำเร็จ');
+            toast.success(t('summary.success'));
             setIsModalVisible(true);
             localStorage.removeItem('paymentData');
             localStorage.removeItem('cart');
             navigate('/timeline');
         } catch (error) {
             console.error('Error saving data:', error);
-            toast.error('บันทึกข้อมูลล้มเหลว');
+            toast.error(t('summary.errors.saveFailed'));
         } finally {
             setIsSaving(false);
         }
     };
-
-
 
     const handleGetCurrentLocation = () => {
         if (navigator.geolocation) {
@@ -168,7 +164,7 @@ const SummandPayPage = () => {
                     setLatLng(newLatLng);
                     setCurrentPosition(newLatLng);
                 },
-                (error) => toast.error('Error retrieving location.'),
+                (error) => toast.error('Error retrieving location.')
             );
         } else toast.error('Geolocation is not supported.');
     };
@@ -177,39 +173,30 @@ const SummandPayPage = () => {
         if (userDocId) {
             try {
                 const userRef = doc(db, 'credentials', userDocId);
-
-                if (field === 'phone') {
-                    // ✅ แปลง 0... เป็น +66...
-                    const normalizedPhone = value.startsWith('0') ? '+66' + value.slice(1) : value;
-                    await updateDoc(userRef, { [field]: normalizedPhone });
-                } else {
-                    await updateDoc(userRef, { [field]: value });
-                }
+                const normalizedPhone = field === 'phone' && value.startsWith('0') ? '+66' + value.slice(1) : value;
+                await updateDoc(userRef, { [field]: normalizedPhone });
             } catch (error) {
                 console.error('Error updating user data in credentials:', error);
             }
         }
     };
 
-
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Typography variant="h4" gutterBottom>สรุปรายการ</Typography>
+        <Container maxWidth="lg" sx={{ py: 4, color: theme.palette.text.primary }}>
+            <Typography variant="h4" gutterBottom>{t('summary.title')}</Typography>
             {paymentData ? (
-                <Paper elevation={3} sx={{ p: 4 }}>
+                <Paper elevation={3} sx={{ p: 4, bgcolor: theme.palette.background.paper }}>
                     <Link to="/sidebar">
-                        <Button variant="outlined" sx={{ mb: 2 }}>
-                            ย้อนกลับ
-                        </Button>
+                        <Button variant="outlined" sx={{ mb: 2 }}>{t('summary.back')}</Button>
                     </Link>
                     <TableContainer sx={{ mb: 4 }}>
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>ชื่อ</TableCell>
-                                    <TableCell>จำนวน-กก.</TableCell>
-                                    <TableCell>ราคา/หน่วย</TableCell>
-                                    <TableCell>รวม-บาท</TableCell>
+                                    <TableCell>{t('summary.name')}</TableCell>
+                                    <TableCell>{t('summary.quantity')}</TableCell>
+                                    <TableCell>{t('summary.unitPrice')}</TableCell>
+                                    <TableCell>{t('summary.total')}</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -221,51 +208,21 @@ const SummandPayPage = () => {
                                         <TableCell>{(item.quantity * item.price).toFixed(2)}</TableCell>
                                     </TableRow>
                                 ))}
-                                {/* ✅ บรรทัดรวม */}
-                                <TableRow sx={{ backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>รวม</TableCell>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>
-                                        {paymentData.cart.reduce((sum, item) => sum + Number(item.quantity), 0)}
-                                    </TableCell>
+                                <TableRow sx={{ backgroundColor: theme.palette.action.hover }}>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>{t('summary.total')}</TableCell>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>{paymentData.cart.reduce((sum, item) => sum + Number(item.quantity), 0)}</TableCell>
                                     <TableCell />
-                                    <TableCell sx={{ fontWeight: 'bold' }}>
-                                        {paymentData.cart.reduce((sum, item) => sum + (item.quantity * item.price), 0).toFixed(2)}
-                                    </TableCell>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>{paymentData.cart.reduce((sum, item) => sum + (item.quantity * item.price), 0).toFixed(2)}</TableCell>
                                 </TableRow>
                             </TableBody>
                         </Table>
                     </TableContainer>
 
-                    <TextField
-                        label="ชื่อ"
-                        value={nameOrder}
-                        error={errors.nameOrder}
-                        helperText={errors.nameOrder ? 'กรุณากรอกชื่อ' : ''}
-                        onChange={(e) => { setNameOrder(e.target.value); setErrors(prev => ({ ...prev, nameOrder: false })); }}
-                        fullWidth sx={{ mb: 2 }}
-                    />
+                    <TextField label={t('summary.name')} value={nameOrder} error={errors.nameOrder} helperText={errors.nameOrder ? t('summary.errors.nameRequired') : ''} onChange={(e) => { setNameOrder(e.target.value); setErrors(prev => ({ ...prev, nameOrder: false })); }} fullWidth sx={{ mb: 2 }} />
+                    <TextField label={t('summary.deliveryLocation')} value={deliveryLocation} error={errors.deliveryLocation} helperText={errors.deliveryLocation ? t('summary.errors.locationRequired') : ''} onChange={(e) => { setDeliveryLocation(e.target.value); setErrors(prev => ({ ...prev, deliveryLocation: false })); }} fullWidth sx={{ mb: 2 }} />
+                    <TextField label={t('summary.phone')} value={phoneNumber} error={errors.phoneNumber} helperText={errors.phoneNumber ? t('summary.errors.phoneRequired') : ''} onChange={(e) => { setPhoneNumber(e.target.value); setErrors(prev => ({ ...prev, phoneNumber: false })); }} fullWidth sx={{ mb: 2 }} />
 
-                    <TextField
-                        label="สถานที่จัดส่ง/ทะเบียนรถ"
-                        value={deliveryLocation}
-                        error={errors.deliveryLocation}
-                        helperText={errors.deliveryLocation ? 'กรุณากรอกสถานที่จัดส่ง' : ''}
-                        onChange={(e) => { setDeliveryLocation(e.target.value); setErrors(prev => ({ ...prev, deliveryLocation: false })); }}
-                        fullWidth sx={{ mb: 2 }}
-                    />
-
-                    <TextField
-                        label="เบอร์โทรศัพท์"
-                        value={phoneNumber}
-                        error={errors.phoneNumber}
-                        helperText={errors.phoneNumber ? 'กรุณากรอกเบอร์โทรศัพท์' : ''}
-                        onChange={(e) => { setPhoneNumber(e.target.value); setErrors(prev => ({ ...prev, phoneNumber: false })); }}
-                        fullWidth sx={{ mb: 2 }}
-                    />
-
-                    <Button variant="contained" onClick={handleGetCurrentLocation} sx={{ mb: 2 }}>
-                        ใช้ตำแหน่งปัจจุบัน
-                    </Button>
+                    <Button variant="contained" onClick={handleGetCurrentLocation} sx={{ mb: 2 }}>{t('summary.useCurrentLocation')}</Button>
 
                     <Box sx={{ height: '400px', mb: 4, border: errors.latLng ? '2px solid red' : 'none' }}>
                         <MapContainer center={currentPosition || [13.7563, 100.5018]} zoom={13} style={{ height: '100%', width: '100%' }}>
@@ -275,38 +232,24 @@ const SummandPayPage = () => {
                         </MapContainer>
                     </Box>
 
-                    <Typography>แนบหลักฐานการโอนเงิน:</Typography>
+                    <Typography>{t('summary.uploadProof')}</Typography>
                     <input type="file" onChange={handlePaymentProofChange} />
-                    {paymentProof && (
-                        <Box sx={{ mt: 2 }}>
-                            <img src={URL.createObjectURL(paymentProof)} alt="Preview" style={{ width: 150, borderRadius: 8 }} />
-                        </Box>
-                    )}
-                    {errors.paymentProof && <Typography color="error">กรุณาแนบหลักฐาน</Typography>}
+                    {paymentProof && <Box sx={{ mt: 2 }}><img src={URL.createObjectURL(paymentProof)} alt="Preview" style={{ width: 150, borderRadius: 8 }} /></Box>}
+                    {errors.paymentProof && <Typography color="error">{t('summary.errors.attachProof')}</Typography>}
 
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        sx={{ mt: 4 }}
-                        fullWidth
-                        onClick={handleSaveInfo}
-                        disabled={isSaving}
-                    >
-                        ยืนยันข้อมูล
-                    </Button>
-
+                    <Button variant="contained" color="primary" sx={{ mt: 4 }} fullWidth onClick={handleSaveInfo} disabled={isSaving}>{t('summary.submit')}</Button>
                 </Paper>
             ) : (
-                <Typography>ยังไม่มีรายการ กรุณาไปที่หน้าแรกเพื่อสั่งซื้อ</Typography>
+                <Typography>{t('summary.noData')}</Typography>
             )}
 
             <Dialog open={isModalVisible} onClose={() => setIsModalVisible(false)}>
-                <DialogTitle>ยืนยันแล้ว</DialogTitle>
+                <DialogTitle>{t('summary.confirmed')}</DialogTitle>
                 <DialogContent>
-                    <Typography>หมายเลขติดตาม: {trackingNumber}</Typography>
+                    <Typography>{t('summary.trackingNumber')} {trackingNumber}</Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => { setIsModalVisible(false); window.location.reload(); }} variant="contained">ปิด</Button>
+                    <Button onClick={() => { setIsModalVisible(false); window.location.reload(); }} variant="contained">{t('common.close')}</Button>
                 </DialogActions>
             </Dialog>
 
@@ -315,7 +258,7 @@ const SummandPayPage = () => {
                     <img src={qrcodeImage} alt="QR Code" style={{ width: '100%' }} />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setIsImageModalVisible(false)} variant="contained">ปิด</Button>
+                    <Button onClick={() => setIsImageModalVisible(false)} variant="contained">{t('common.close')}</Button>
                 </DialogActions>
             </Dialog>
 

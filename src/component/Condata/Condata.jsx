@@ -1,3 +1,4 @@
+// Condata.jsx — รองรับ i18n ทั้งภาษาอังกฤษและภาษาไทย
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, doc, updateDoc, deleteDoc, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -6,8 +7,10 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, IconButton, Pagination, CircularProgress } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { useTranslation } from 'react-i18next';
 
 function Condata({ user }) {
+    const { t } = useTranslation();
     const [cardsData, setCardsData] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ title: '', description: '', price: '', imageUrl: '', pid: '', stockKg: '', status: true });
@@ -63,20 +66,20 @@ function Condata({ user }) {
         const pid = String(formData.pid).trim();
         const title = String(formData.title).trim();
 
-        if (!pid || !title) return "กรุณากรอก รหัส และ ชื่อ ให้ครบถ้วน";
+        if (!pid || !title) return t('condata.validationError');
 
         const pidQuery = query(collection(db, 'cardsData'), where('pid', '==', pid));
         const pidSnapshot = await getDocs(pidQuery);
         if (!pidSnapshot.empty) {
             const duplicate = pidSnapshot.docs.find(doc => doc.id !== editingId);
-            if (duplicate) return 'รหัสผักซ้ำกับรายการอื่น';
+            if (duplicate) return t('condata.duplicatePid');
         }
 
         const titleQuery = query(collection(db, 'cardsData'), where('title', '==', title));
         const titleSnapshot = await getDocs(titleQuery);
         if (!titleSnapshot.empty) {
             const duplicate = titleSnapshot.docs.find(doc => doc.id !== editingId);
-            if (duplicate) return 'ชื่อผักซ้ำกับรายการอื่น';
+            if (duplicate) return t('condata.duplicateTitle');
         }
 
         return '';
@@ -86,8 +89,7 @@ function Condata({ user }) {
         if (!imageFile) return '';
         const imageRef = ref(storage, `cardsData/${Date.now()}_${imageFile.name}`);
         await uploadBytes(imageRef, imageFile);
-        const url = await getDownloadURL(imageRef);
-        return url;
+        return await getDownloadURL(imageRef);
     };
 
     const handleSubmit = async () => {
@@ -99,23 +101,17 @@ function Condata({ user }) {
             }
 
             let imageUrl = formData.imageUrl;
-            if (imageFile) {
-                imageUrl = await uploadImage();
-            }
+            if (imageFile) imageUrl = await uploadImage();
 
             const dataToSave = { ...formData, imageUrl };
-
-            if (modalType === 'edit') {
-                await updateDoc(doc(db, 'cardsData', editingId), dataToSave);
-            } else if (modalType === 'add') {
-                await addDoc(collection(db, 'cardsData'), dataToSave);
-            }
+            if (modalType === 'edit') await updateDoc(doc(db, 'cardsData', editingId), dataToSave);
+            else if (modalType === 'add') await addDoc(collection(db, 'cardsData'), dataToSave);
 
             setShowModal(false);
             setEditingId(null);
             setImageFile(null);
         } catch (error) {
-            setErrorMessage('เกิดข้อผิดพลาด');
+            setErrorMessage(t('condata.uploadError'));
             console.error(error);
         }
     };
@@ -125,7 +121,7 @@ function Condata({ user }) {
             await deleteDoc(doc(db, 'cardsData', editingId));
             setShowModal(false);
         } catch (error) {
-            setErrorMessage('เกิดข้อผิดพลาดในการลบ');
+            setErrorMessage(t('condata.uploadError'));
             console.error(error);
         }
     };
@@ -134,7 +130,7 @@ function Condata({ user }) {
         try {
             await updateDoc(doc(db, 'cardsData', id), { status: !currentStatus });
         } catch (error) {
-            setErrorMessage('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ');
+            setErrorMessage(t('condata.uploadError'));
             console.error(error);
         }
     };
@@ -143,15 +139,11 @@ function Condata({ user }) {
         try {
             const snapshot = await getDocs(collection(db, 'cardsData'));
             if (snapshot.empty) {
-                setErrorMessage("ไม่มีข้อมูลในระบบ");
+                setErrorMessage(t('condata.excelEmpty'));
                 return;
             }
 
-            const data = snapshot.docs.map(doc => {
-                const d = doc.data();
-                return { pid: d.pid || '', title: d.title || '', price: d.price || '', stockKg: d.stockKg || '' };
-            });
-
+            const data = snapshot.docs.map(doc => doc.data());
             const worksheet = XLSX.utils.json_to_sheet(data);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'cardsData');
@@ -160,16 +152,15 @@ function Condata({ user }) {
             saveAs(blob, 'cardsData_export.xlsx');
         } catch (error) {
             console.error("Export Error:", error);
-            setErrorMessage("เกิดข้อผิดพลาดในการดึงข้อมูลหรือสร้างไฟล์");
+            setErrorMessage(t('condata.uploadError'));
         }
     };
 
     const importExcelAndUpdateCardsData = (file) => {
         if (!file) {
-            setErrorMessage("กรุณาเลือกไฟล์ Excel");
+            setErrorMessage(t('condata.validationError'));
             return;
         }
-
         const reader = new FileReader();
         reader.onload = async (evt) => {
             try {
@@ -177,11 +168,6 @@ function Condata({ user }) {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-                if (!jsonData.length) {
-                    setErrorMessage("ไฟล์ไม่ถูกต้องหรือไม่มีข้อมูล");
-                    return;
-                }
 
                 const updates = [];
                 for (const row of jsonData) {
@@ -201,13 +187,13 @@ function Condata({ user }) {
 
                 if (updates.length) {
                     await Promise.all(updates);
-                    setErrorMessage(`อัพเดทข้อมูลสำเร็จ (${updates.length} รายการ)`);
+                    setErrorMessage(t('condata.excelSuccess', { count: updates.length }));
                 } else {
-                    setErrorMessage("ไม่พบ pid ที่ตรงกับฐานข้อมูล");
+                    setErrorMessage(t('condata.excelEmpty'));
                 }
             } catch (error) {
                 console.error("Import Error:", error);
-                setErrorMessage("เกิดข้อผิดพลาดในการนำเข้า");
+                setErrorMessage(t('condata.uploadError'));
             }
         };
         reader.readAsArrayBuffer(file);
@@ -220,28 +206,27 @@ function Condata({ user }) {
         <div style={{ padding: '20px' }}>
             {isAdmin && (
                 <>
-                    <Button variant="contained" color="primary" onClick={handleAdd} sx={{ mb: 2, mr: 2 }}>เพิ่มผัก</Button>
-                    <Button variant="outlined" onClick={exportAllCardsDataToExcel} sx={{ mb: 2, mr: 2 }}>
-                        ส่งออก excel
-                    </Button>
-                    <Button variant="outlined" component="label" sx={{ mb: 2 }}>
-                        นำเข้า Excel
-                        <input type="file" accept=".xlsx" hidden onChange={(e) => importExcelAndUpdateCardsData(e.target.files[0])} />
+                    <Button variant="contained" onClick={handleAdd}>{t('condata.add')}</Button>{' '}
+                    <Button variant="outlined" onClick={exportAllCardsDataToExcel}>{t('condata.exportExcel')}</Button>{' '}
+                    <Button variant="outlined" component="label">
+                        {t('condata.importExcel')}
+                        <input type="file" hidden accept=".xlsx" onChange={(e) => importExcelAndUpdateCardsData(e.target.files[0])} />
                     </Button>
                 </>
             )}
+
             <TableContainer component={Paper} sx={{ my: 2 }}>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>รหัส</TableCell>
-                            <TableCell>ชื่อ</TableCell>
-                            <TableCell>รายละเอียด</TableCell>
-                            <TableCell>ราคา</TableCell>
-                            <TableCell>สต๊อก (กก.)</TableCell>
-                            <TableCell>รูปภาพ</TableCell>
-                            <TableCell>สถานะ</TableCell>
-                            {isAdmin && <TableCell>จัดการ</TableCell>}
+                            <TableCell>{t('condata.code')}</TableCell>
+                            <TableCell>{t('condata.name')}</TableCell>
+                            <TableCell>{t('condata.description')}</TableCell>
+                            <TableCell>{t('condata.price')}</TableCell>
+                            <TableCell>{t('condata.stock')}</TableCell>
+                            <TableCell>{t('condata.image')}</TableCell>
+                            <TableCell>{t('condata.status')}</TableCell>
+                            {isAdmin && <TableCell>{t('condata.manage')}</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -251,17 +236,17 @@ function Condata({ user }) {
                                 <TableCell>{card.title}</TableCell>
                                 <TableCell>{card.description}</TableCell>
                                 <TableCell>{card.price}</TableCell>
-                                <TableCell>{card.stockKg ?? '-'}</TableCell>
+                                <TableCell>{card.stockKg}</TableCell>
                                 <TableCell><img src={card.imageUrl} alt={card.title} style={{ width: 50 }} /></TableCell>
                                 <TableCell>
-                                    <Button variant={card.status ? 'contained' : 'outlined'} color={card.status ? 'success' : 'error'} onClick={() => handleStatusToggle(card.id, card.status)}>
-                                        {card.status ? 'มี' : 'ไม่มี'}
+                                    <Button onClick={() => handleStatusToggle(card.id, card.status)} variant={card.status ? 'contained' : 'outlined'} color={card.status ? 'success' : 'error'}>
+                                        {card.status ? t('condata.has') : t('condata.no')}
                                     </Button>
                                 </TableCell>
                                 {isAdmin && (
                                     <TableCell>
-                                        <Button variant="contained" onClick={() => handleEdit(card.id)} sx={{ mr: 1 }}>แก้ไข</Button>
-                                        <Button variant="contained" color="error" onClick={() => handleDelete(card.id)}>ลบ</Button>
+                                        <Button onClick={() => handleEdit(card.id)}>{t('condata.edit')}</Button>{' '}
+                                        <Button color="error" onClick={() => handleDelete(card.id)}>{t('condata.delete')}</Button>
                                     </TableCell>
                                 )}
                             </TableRow>
@@ -270,31 +255,31 @@ function Condata({ user }) {
                 </Table>
             </TableContainer>
 
-            <Pagination count={totalPages} page={currentPage} onChange={(e, value) => setCurrentPage(value)} sx={{ mt: 2 }} />
+            <Pagination count={totalPages} page={currentPage} onChange={(e, val) => setCurrentPage(val)} />
 
             <Dialog open={showModal} onClose={() => setShowModal(false)}>
-                <DialogTitle>{modalType === 'edit' ? 'แก้ไข' : modalType === 'delete' ? 'ลบ' : 'เพิ่ม'}</DialogTitle>
+                <DialogTitle>{modalType === 'edit' ? t('condata.edit') : modalType === 'delete' ? t('condata.delete') : t('condata.add')}</DialogTitle>
                 <DialogContent>
                     {modalType === 'delete' ? (
-                        <p>คุณต้องการลบหรือไม่?</p>
+                        <p>{t('condata.confirmDelete')}</p>
                     ) : (
                         <>
-                            <TextField fullWidth label="รหัสผัก" name="pid" value={formData.pid} onChange={handleChange} margin="normal" type="number" />
-                            <TextField fullWidth label="ชื่อผัก" name="title" value={formData.title} onChange={handleChange} margin="normal" />
-                            <TextField fullWidth label="รายละเอียด" name="description" value={formData.description} onChange={handleChange} margin="normal" />
-                            <TextField fullWidth label="ราคา" name="price" value={formData.price} onChange={handleChange} margin="normal" type="number" />
-                            <TextField fullWidth label="สต๊อก (กก.)" name="stockKg" value={formData.stockKg} onChange={handleChange} margin="normal" type="number" inputProps={{ step: "0.1", min: "0" }} />
-                            <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} style={{ marginTop: '16px' }} />
-                            {formData.imageUrl && <img src={formData.imageUrl} alt="Preview" style={{ width: 100, marginTop: '10px' }} />}
+                            <TextField fullWidth name="pid" label={t('condata.code')} value={formData.pid} onChange={handleChange} margin="normal" type="number" />
+                            <TextField fullWidth name="title" label={t('condata.name')} value={formData.title} onChange={handleChange} margin="normal" />
+                            <TextField fullWidth name="description" label={t('condata.description')} value={formData.description} onChange={handleChange} margin="normal" />
+                            <TextField fullWidth name="price" label={t('condata.price')} value={formData.price} onChange={handleChange} margin="normal" type="number" />
+                            <TextField fullWidth name="stockKg" label={t('condata.stock')} value={formData.stockKg} onChange={handleChange} margin="normal" type="number" inputProps={{ step: "0.1" }} />
+                            <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} style={{ marginTop: 16 }} />
+                            {formData.imageUrl && <img src={formData.imageUrl} alt="Preview" style={{ width: 100, marginTop: 10 }} />}
                         </>
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setShowModal(false)}>ยกเลิก</Button>
+                    <Button onClick={() => setShowModal(false)}>{t('condata.cancel')}</Button>
                     {modalType === 'delete' ? (
-                        <Button color="error" onClick={handleConfirmDelete}>ลบ</Button>
+                        <Button onClick={handleConfirmDelete} color="error">{t('condata.delete')}</Button>
                     ) : (
-                        <Button onClick={handleSubmit} disabled={!formData.title || !formData.description || !formData.price || !formData.pid || !formData.stockKg}>บันทึก</Button>
+                        <Button onClick={handleSubmit}>{t('condata.save')}</Button>
                     )}
                 </DialogActions>
             </Dialog>

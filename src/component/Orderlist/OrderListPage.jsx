@@ -1,13 +1,16 @@
+// ✅ OrderListPage.jsx — รองรับ i18n + รับ startDate, endDate, shouldFetch + reset loop
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { getAuth } from 'firebase/auth';
 import {
   Container, Card, CardContent, CardActions, Typography, Button,
   Collapse, Box, Pagination, Divider, Chip, Skeleton
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
-const OrderListPage = ({ title, customFilter = {} }) => {
+const OrderListPage = ({ title, customFilter = {}, startDate, endDate, shouldFetch, onFetched }) => {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
   const [page, setPage] = useState(1);
@@ -22,7 +25,7 @@ const OrderListPage = ({ title, customFilter = {} }) => {
     try {
       const uid = getAuth().currentUser?.uid;
       if (!uid) {
-        setError('ไม่พบผู้ใช้งาน กรุณาล็อกอิน');
+        setError(t('order.error.noUser'));
         setLoading(false);
         return;
       }
@@ -32,13 +35,19 @@ const OrderListPage = ({ title, customFilter = {} }) => {
         conditions.push(where(field, '==', value));
       });
 
-      const q = query(collection(db, 'deliveryData'), ...conditions);
+      if (startDate) {
+        conditions.push(where('date', '>=', Timestamp.fromDate(new Date(startDate))));
+      }
+      if (endDate) {
+        conditions.push(where('date', '<=', Timestamp.fromDate(new Date(endDate))));
+      }
 
+      const q = query(collection(db, 'deliveryData'), ...conditions);
       const querySnapshot = await getDocs(q);
       const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setOrders(data);
     } catch (e) {
-      setError('เกิดข้อผิดพลาดในการดึงข้อมูล');
+      setError(t('order.error.fetchFail'));
       console.error('Error fetching orders:', e);
     } finally {
       setLoading(false);
@@ -46,8 +55,12 @@ const OrderListPage = ({ title, customFilter = {} }) => {
   };
 
   useEffect(() => {
-    fetchUserOrders();
-  }, []);
+    if (shouldFetch) {
+      fetchUserOrders().finally(() => {
+        onFetched?.(); // ✅ Reset flag after fetching
+      });
+    }
+  }, [shouldFetch]);
 
   const handleExpandClick = (id) => {
     setExpandedId(expandedId === id ? null : id);
@@ -59,9 +72,9 @@ const OrderListPage = ({ title, customFilter = {} }) => {
   };
 
   const getOrderStatusText = (order) => {
-    if (!order.paidstatus) return 'รอการยืนยัน';
-    if (order.paidstatus && !order.status) return 'ยืนยันแล้ว รอจัดส่ง';
-    if (order.paidstatus && order.status) return 'จัดส่งสำเร็จแล้ว';
+    if (!order.paidstatus) return t('order.status.waiting');
+    if (order.paidstatus && !order.status) return t('order.status.confirmed');
+    if (order.paidstatus && order.status) return t('order.status.delivered');
     return '';
   };
 
@@ -92,21 +105,21 @@ const OrderListPage = ({ title, customFilter = {} }) => {
       {error && <Typography color="error" textAlign="center">{error}</Typography>}
 
       {!loading && orders.length === 0 && (
-        <Typography textAlign="center" color="textSecondary" sx={{ mt: 4 }}>ยังไม่มีข้อมูล</Typography>
+        <Typography textAlign="center" color="textSecondary" sx={{ mt: 4 }}>{t('order.empty')}</Typography>
       )}
 
       {paginatedOrders.map((order) => (
         <Card key={order.id} variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Typography variant="h6" fontWeight="bold">หมายเลขติดตาม: {order.trackingNumber}</Typography>
+              <Typography variant="h6" fontWeight="bold">{t('order.trackingNumber')}: {order.trackingNumber}</Typography>
               <Chip label={getOrderStatusText(order)} color={getOrderStatusColor(order)} variant="filled" />
             </Box>
           </CardContent>
 
           <CardActions>
             <Button size="small" variant="outlined" onClick={() => handleExpandClick(order.id)}>
-              {expandedId === order.id ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}
+              {expandedId === order.id ? t('order.hideDetail') : t('order.viewDetail')}
             </Button>
           </CardActions>
 
@@ -115,19 +128,27 @@ const OrderListPage = ({ title, customFilter = {} }) => {
             <Box p={2}>
               {order.cart && order.cart.map((item) => (
                 <Box key={item.id} mb={1}>
-                  <Typography>• {item.title} - {item.quantity} กก. x {item.price} บาท = {(item.quantity * item.price).toFixed(2)} บาท</Typography>
+                  <Typography>• {item.title} - {item.quantity} {t('order.kg')} x {item.price} {t('order.baht')} = {(item.quantity * item.price).toFixed(2)} {t('order.baht')}</Typography>
                 </Box>
               ))}
+              {order.totalPrice && (
+                <Box mt={2}>
+                  <Typography>
+                    {t('order.totalPrice')}: {order.totalPrice.toFixed(2)} {t('order.baht')}
+                  </Typography>
+                </Box>
+              )}
+
               {order.paymentProofUrl && (
                 <Box mt={2}>
-                  <Typography>หลักฐานโอน:</Typography>
-                  <Box component="img" src={order.paymentProofUrl} alt="หลักฐานโอน" sx={{ width: 150, borderRadius: 1, mt: 1 }} />
+                  <Typography>{t('order.paymentProof')}:</Typography>
+                  <Box component="img" src={order.paymentProofUrl} alt="Payment Proof" sx={{ width: 150, borderRadius: 1, mt: 1 }} />
                 </Box>
               )}
               {order.imageUrl && (
                 <Box mt={2}>
-                  <Typography>หลักฐานส่งของ:</Typography>
-                  <Box component="img" src={order.imageUrl} alt="หลักฐานส่งของ" sx={{ width: 150, borderRadius: 1, mt: 1 }} />
+                  <Typography>{t('order.deliveryProof')}:</Typography>
+                  <Box component="img" src={order.imageUrl} alt="Delivery Proof" sx={{ width: 150, borderRadius: 1, mt: 1 }} />
                 </Box>
               )}
             </Box>

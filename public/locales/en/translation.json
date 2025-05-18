@@ -1,0 +1,314 @@
+{
+  "home": "Home",
+  "summaryy": "Summary",
+  "orders": "Orders",
+  "status": "Orders Status",
+  "delivery": "Delivery",
+  "aggregate": "Aggregate",
+  "profile": "Profile",
+  "logout": "Logout",
+  "changeTheme": "Change Theme",
+  "changeLanguage": "Change Language",
+  "pendingOrders": "Pending Orders",
+
+  "login": {
+    "title": "Login",
+    "shopTitle": "Vegetable Shop B.Bird Prakhon Chai",
+    "username_or_phone": "Username or Phone Number (0XXXXXXXXX)",
+    "password": "Password",
+    "remember": "Remember",
+    "login_button": "Login",
+    "forgot_password": "Forgot password?",
+    "no_account": "Don’t have an account?",
+    "register_now": "Register now",
+    "success": "Login successful",
+    "error": {
+      "required": "Please enter username or phone number",
+      "invalid_phone": "Invalid phone number (should be 0XXXXXXXXX)",
+      "invalid_form": "Please enter valid data",
+      "no_token": "Missing user or token. Please contact admin.",
+      "generic": "An error occurred. Login failed"
+    }
+  },
+
+  "register": {
+    "title": "Register",
+    "backToLogin": "Back to Login",
+    "name": "Full Name",
+    "username": "Username (preferably in English)",
+    "email": "Email (optional)",
+    "password": "Password",
+    "phone": "Phone Number (e.g. 0891234567)",
+    "sendOTP": "Send OTP",
+    "resendOTPIn": "Resend OTP in {{seconds}} seconds",
+    "otp": "Enter OTP",
+    "verifyAndRegister": "Verify & Register",
+    "successMessage": "Registration successful. Redirecting to Login...",
+    "errors": {
+      "invalidPhone": "Please enter a valid Thai phone number",
+      "duplicatePhone": "This phone number is already in use",
+      "duplicateEmail": "This email is already registered",
+      "duplicateName": "This name is already in use",
+      "duplicateUsername": "This username is already taken",
+      "otpInvalid": "OTP is incorrect or expired",
+      "captchaExpired": "reCAPTCHA expired. Please try again"
+    }
+  },
+  "reset": {
+  "title": "Forgot Password",
+  "username": "Username",
+  "phone": "Phone Number (e.g. 0891234567)",
+  "sendOTP": "Send OTP",
+  "otp": "Enter OTP",
+  "newPassword": "New Password",
+  "confirmPassword": "Confirm New Password",
+  "verify": "Verify OTP & Reset Password",
+  "backToLogin": "Back to Login",
+  "errors": {
+    "invalidForm": "Please enter valid username and phone number",
+    "userNotFound": "Username not found",
+    "phoneMismatch": "Phone number does not match",
+    "otpSendFail": "Failed to send OTP. Check phone or reCAPTCHA",
+    "missingFields": "Please fill all required fields",
+    "passwordMismatch": "Passwords do not match",
+    "phoneNotFound": "User not found for this phone number",
+    "otpInvalid": "OTP is incorrect or expired",
+    "captchaExpired": "reCAPTCHA expired. Please try again"
+  }
+},
+ "summary": {
+    "title": "Order Summary",
+    "back": "Back",
+    "name": "Name",
+    "quantity": "Qty (kg)",
+    "unitPrice": "Price/Unit",
+    "deliveryLocation": "Delivery location",
+    "phone": "Phone",
+    "total": "Total (THB)",
+    "uploadProof": "Upload payment proof:",
+    "submit": "Confirm Order",
+    "confirmed": "Confirmed",
+    "trackingNumber": "Tracking Number:",
+    "noData": "No items found. Please go to homepage to order.",
+    "useCurrentLocation": "Use Current Location",
+    "errors": {
+      "nameRequired": "Please enter your name",
+      "locationRequired": "Please enter delivery location",
+      "phoneRequired": "Please enter phone number",
+      "attachProof": "Please attach payment proof",
+      "incomplete": "Please complete all required fields and upload proof",
+      "uploadFailed": "Upload failed",
+      "saveFailed": "Saving failed",
+      "userNotFound": "User not found. Please login",
+      "deliveryLocation": "Delivery location"
+    },
+    "success": "Saved successfully"
+  },
+  "common": {
+    "close": "Close"
+  },
+
+
+  "order": {
+    "filter": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "search": "Search"
+    },
+    "trackingNumber": "Tracking Number",
+    "status": {
+      "waiting": "Waiting",
+      "confirmed": "Confirmed",
+      "delivered": "Delivered"
+    },
+    "paymentProof": "Payment Proof",
+    "deliveryProof": "Delivery Proof",
+    "totalPrice": "Total Price",
+    "kg": "kg",
+    "baht": "baht",
+    "empty": "No orders found.",
+    "error": {
+      "noUser": "User not logged in",
+      "fetchFail": "Failed to fetch orders"
+    },
+    "hideDetail": "Hide Details",
+    "viewDetail": "View Details"
+  },
+  "orderHistory": {
+    "title": "Order History"
+  },
+  "timeline": {
+    "title": "Order Timeline",
+    "pending": "Pending Payment",
+    "confirmedPendingDelivery": "Payment Confirmed - Pending Delivery",
+    "viewHistory": "View History"
+  },
+  "common": {
+    "back": "Back"
+  }
+
+
+
+
+,
+
+
+
+"sidebar": {
+  "totalIncome": "Total Income",
+  "totalWeight": "Total Weight",
+  "totalSets": "Total Delivered",
+  "sets": "sets",
+  "baht": "Baht",
+  "kg": "kg",
+  "slides": {
+    "1": {
+      "title": "Fresh fruits every day",
+      "desc": "Easy to order, fast delivery to your door",
+      "buttonText": "View Promotions"
+    },
+    "2": {
+      "title": "Special this month!",
+      "desc": "Get a discount when you order over 20,000 Baht",
+      "buttonText": "View Details"
+    }
+  },
+  "error": {
+    "invalidDate": "Please enter a valid date"
+  }
+},
+"contact": {
+  "selectDate": "Select Date",
+  "pending": "Pending Deliveries",
+  "delivered": "Delivered",
+  "set": "Set No.",
+  "name": "Name",
+  "location": "Delivery Location",
+  "total": "Total Price",
+  "baht": "Baht",
+  "kg": "kg",
+  "markDelivered": "Mark as Delivered",
+  "undo": "Undo",
+  "hideContent": "Hide Content",
+  "showContent": "Show Content"
+},
+"condata": {
+  "add": "Add",
+  "edit": "Edit",
+  "delete": "Delete",
+  "confirmDelete": "Are you sure you want to delete?",
+  "cancel": "Cancel",
+  "save": "Save",
+  "code": "Code",
+  "name": "Name",
+  "description": "Description",
+  "price": "Price",
+  "stock": "Stock (kg)",
+  "image": "Image",
+  "status": "Status",
+  "has": "Available",
+  "no": "Unavailable",
+  "manage": "Manage",
+  "importExcel": "Import Excel",
+  "exportExcel": "Export Excel",
+  "excelSuccess": "Updated {{count}} items successfully",
+  "excelEmpty": "No matching pid found",
+  "uploadError": "Error during import",
+  "loading": "Loading...",
+  "duplicatePid": "Duplicate code found",
+  "duplicateTitle": "Duplicate name found",
+  "validationError": "Please fill in all required fields"
+},
+"ordersump": {
+  "title": "Order Summary",
+  "startDate": "Start Date/Time",
+  "endDate": "End Date/Time",
+  "search": "Search by Date",
+  "toggleCharts": "Show Charts",
+  "hideCharts": "Hide Charts",
+  "table": {
+    "time": "Time",
+    "name": "Name",
+    "totalPrice": "Total Price",
+    "location": "Delivery Location",
+    "approval": "Approval",
+    "proof": "Proof",
+    "phone": "Phone",
+    "tracking": "Tracking No.",
+    "details": "Details"
+  },
+  "buttons": {
+    "approve": "Approve",
+    "cancel": "Cancel",
+    "viewDetails": "View Details",
+    "close": "Close"
+  },
+  "chart": {
+    "summaryTitle": "📊 Total Price Summary",
+    "orderTitle": "📦 Order Count Summary",
+    "approved": "Approved",
+    "unapproved": "Unapproved"
+  },
+  "dialog": {
+    "proofTitle": "Payment Proof",
+    "orderDetailTitle": "Order Details",
+    "product": "Product Name",
+    "code": "Product Code",
+    "qty": "Quantity",
+    "price": "Price",
+    "total": "Total",
+    "desc": "Description",
+    "orderTotal": "✅ Order Total"
+  },
+  "error": {
+    "dateInvalid": "Please select a valid date range"
+  }
+},
+ "sidebar": {
+    "slide1Title": "Fresh fruits every day",
+    "slide1Desc": "Easy to order, fast delivery to your hands",
+    "slide1Btn": "View Promotions",
+    "slide2Title": "Special deal this month!",
+    "slide2Desc": "Get discount instantly when ordering over 20,000 baht",
+    "slide2Btn": "See Details",
+    "startDate": "Start Date/Time",
+    "endDate": "End Date/Time",
+    "searchDate": "Search Date",
+    "searchSuccess": "Date search successful",
+    "searchLabel": "Search fruit name or price",
+    "moneyReceived": "Amount received",
+    "deliveryLocation": "Enter vehicle plate/delivery location",
+    "clear": "Clear",
+    "submit": "Place Order",
+      "title": "Product Name",
+      "price": "Price",
+      "quantity": "Quantity",
+      "total": "Total",
+      "unit": "{{value}} KG",
+      "subtotal": "{{value}} THB",
+       "cartTitle": "Select fruits to cart",
+  "totalPrice": "Total Price",
+  "currency": "Baht",
+  "changeLabel": "Change",
+  "totalIncome": "Total Income",
+  "totalWeight": "Total Weight",
+  "totalDelivered": "Total Delivered: {{count}} sets",
+  "kg": "kg",
+  "totalSold": "Total",
+  "outOfStock": "❌ Out of stock",
+  "remainingStock": "✅ {{count}} kg left",
+  "outOfStockShort": "Out of stock",
+  "add": "Add",
+       "table": {
+    "name": "Name",
+    "price": "Price",
+    "kg": "Kg",
+    "total": "Total",
+    "modify": "Add/Remove (100g)"
+  }
+  }
+}
+
+
+
+

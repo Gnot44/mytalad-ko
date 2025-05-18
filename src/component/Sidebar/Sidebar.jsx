@@ -1,7 +1,9 @@
+// Sidebar.jsx — ปรับให้ใช้ MUI Theme (ไม่ใช้ isDarkTheme)
 import React, { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
+import { useTheme } from '@mui/material/styles';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { th } from 'date-fns/locale';
@@ -12,13 +14,14 @@ import { Grid, TextField, Button } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 
 
-
-
-function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
-
+function Sidebar({ Popup_W, Success_W, Load_iy, user }) {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation();
 
 
   const [startDate, setStartDate] = useState(() => {
@@ -81,20 +84,21 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
     {
       id: 1,
       image: 'https://img.daisyui.com/images/stock/photo-1625726411847-8cbb60cc71e6.webp',
-      title: 'ผลไม้สดใหม่ทุกวัน',
-      desc: 'สั่งง่าย ส่งไว ถึงมือคุณ',
-      buttonText: 'ดูโปรโมชั่น',
+      title: t('sidebar.slide1Title'),
+      desc: t('sidebar.slide1Desc'),
+      buttonText: t('sidebar.slide1Btn'),
       buttonColor: 'bg-orange-500 hover:bg-orange-600',
     },
     {
       id: 2,
       image: 'https://img.daisyui.com/images/stock/photo-1609621838510-5ad474b7d25d.webp',
-      title: 'โปรพิเศษเดือนนี้!',
-      desc: 'รับส่วนลดทันทีเมื่อสั่งครบ 20000 บาท',
-      buttonText: 'ดูรายละเอียด',
+      title: t('sidebar.slide2Title'),
+      desc: t('sidebar.slide2Desc'),
+      buttonText: t('sidebar.slide2Btn'),
       buttonColor: 'bg-green-500 hover:bg-green-600',
     },
   ];
+
 
 
 
@@ -276,68 +280,34 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
   };
 
   const totalStyle = {
-    color: isDarkTheme ? '#FFFFFF' : '#000000', // ตัวอักษรสีขาวในโหมดมืด สีดำในโหมดสว่าง
-    backgroundColor: isDarkTheme ? '#1A1A2E' : '#FFFFFF', // พื้นหลังโหมดมืด/สว่าง
-    border: isDarkTheme ? '2px solid #2E2E3A' : '2px solid #E0E0E0', // ขอบสีเข้มในโหมดมืดและสีเทาอ่อนในโหมดสว่าง
-    borderRadius: '15px', // ขอบโค้งมน
-    boxShadow: isDarkTheme ? '0 6px 12px rgba(0, 0, 0, 0.5)' : '0 6px 12px rgba(0, 0, 0, 0.1)', // เงาเข้มในโหมดมืดและเงาอ่อนในโหมดสว่าง
-    transition: 'color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease', // เพิ่มการเปลี่ยนแปลงนุ่มนวลสำหรับเงา
-    fontFamily: 'IBM Plex Sans Thai, sans-serif', // ฟอนต์ไทยที่ทันสมัย
-    fontSize: '20px', // ขนาดตัวอักษร
-    padding: '1rem', // เพิ่ม padding ให้สวยงาม
-    margin: '1rem', // เพิ่ม margin เพื่อให้เนื้อหาดูไม่อัดแน่น
-  };
-
-  const moStyle = {
-    color: isDarkTheme ? '#FFFFFF' : '#000000',
-    backgroundColor: isDarkTheme ? '#1A1A2E' : '#FFFFFF',
-    border: isDarkTheme ? '2px solid #2E2E3A' : '2px solid #E0E0E0',
+    color: isDarkMode ? '#FFFFFF' : '#000000',
+    backgroundColor: isDarkMode ? '#1A1A2E' : '#FFFFFF',
+    border: isDarkMode ? '2px solid #2E2E3A' : '2px solid #E0E0E0',
     borderRadius: '15px',
-    boxShadow: isDarkTheme ? '0 6px 12px rgba(0, 0, 0, 0.5)' : '0 6px 12px rgba(0, 0, 0, 0.1)',
+    boxShadow: isDarkMode ? '0 6px 12px rgba(0, 0, 0, 0.5)' : '0 6px 12px rgba(0, 0, 0, 0.1)',
     transition: 'color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease',
     fontFamily: 'IBM Plex Sans Thai, sans-serif',
     fontSize: '20px',
-    padding: '1rem', // ✅ ใช้ padding ภายในแทน
-    width: '100%', // ✅ ให้ชิดขอบใน flex ได้พอดี
-    boxSizing: 'border-box', // ✅ รวม border และ padding ให้อยู่ใน 100%
+    padding: '1rem',
+    width: '100%',          // ✅ ขยายเต็ม container
+    boxSizing: 'border-box' // ✅ รวม padding และ border ไว้ในความกว้าง
+  };
+
+
+  const moStyle = {
+    ...totalStyle,
+    width: '100%',
+    boxSizing: 'border-box'
   };
 
   const menuStyle = {
-    // backgroundColor: isDarkTheme ? '#1A1A2E' : '#F0F0F0',
-    color: isDarkTheme ? '#F0F0F0' : '#F0F0F0',
+    color: isDarkMode ? '#F0F0F0' : '#000000',
     transition: 'background-color 0.3s ease',
     fontFamily: 'IBM Plex Sans Thai, sans-serif',
     fontSize: '20px',
   };
 
-  const choStyle = {
-    color: '#4CAF50', // สีเขียว
-    fontWeight: 'bold',
-    fontSize: '24px', // ขนาดของฟอนต์สำหรับจอใหญ่
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    padding: '10px',
-  };
-
-  const mobileStyle = {
-    ...choStyle,
-    fontSize: '18px', // ขนาดของฟอนต์สำหรับจอมือถือ
-  };
-
-  const containerStyle = {
-    color: isDarkTheme ? '#FFFFFF' : '#000000', // ตัวอักษรสีขาวในโหมดมืด สีดำในโหมดสว่าง
-    backgroundColor: isDarkTheme ? '#1A1A2E' : '#FFFFFF', // พื้นหลังโหมดมืด/สว่าง
-    border: isDarkTheme ? '2px solid #2E2E3A' : '2px solid #E0E0E0', // ขอบสีเข้มในโหมดมืดและสีเทาอ่อนในโหมดสว่าง
-    borderRadius: '15px', // ขอบโค้งมน
-    boxShadow: isDarkTheme ? '0 6px 12px rgba(0, 0, 0, 0.5)' : '0 6px 12px rgba(0, 0, 0, 0.1)', // เงาเข้มในโหมดมืดและเงาอ่อนในโหมดสว่าง
-    transition: 'color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease', // เพิ่มการเปลี่ยนแปลงนุ่มนวลสำหรับเงา
-    fontFamily: 'IBM Plex Sans Thai, sans-serif', // ฟอนต์ไทยที่ทันสมัย
-    fontSize: '20px', // ขนาดตัวอักษร
-    padding: '1rem', // เพิ่ม padding ให้สวยงาม
-    margin: '1rem', // เพิ่ม margin เพื่อให้เนื้อหาดูไม่อัดแน่น
-  };
+  const containerStyle = { ...totalStyle };
 
 
   // ตรวจสอบขนาดหน้าจอ 
@@ -471,7 +441,8 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
     }
   };
 
-  const formatNumber = (number) => parseFloat(number).toFixed(2);
+  const formatNumber = (number) => isNaN(number) ? '0.00' : parseFloat(number).toFixed(2);
+
 
   const calculateTotalQual = () => {
     return cart.reduce((total, item) => total + item.quantity, 0);
@@ -481,10 +452,17 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
     return (cart.reduce((total, item) => total + item.price * item.quantity, 0));
   }
 
+
   const calculateChange = () => {
-    const change = parseFloat(moneyReceived) - parseFloat(calculateTotalPrice());
+    const received = parseFloat(moneyReceived);
+    const total = parseFloat(calculateTotalPrice());
+
+    if (isNaN(received) || isNaN(total)) return '0.00';
+
+    const change = received - total;
     return formatNumber(change >= 0 ? change : 0);
   };
+
 
   const updateLocalStorage = (cart) => {
     localStorage.setItem('cart', JSON.stringify(cart));
@@ -571,13 +549,10 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
   return loadingss ? (
     <Load_iy />
   ) : (
-
     <div className="drawer lg:drawer-open">
       {showPop && <Popup_W />}
       {showSac && <Success_W />}
-
       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
-
       <div className="drawer-content">
 
         {iscustomerside && (
@@ -645,8 +620,10 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
               {isAdminside && (
 
                 <div className="stat-title text-sm lg:text-base" style={menuStyle}>
-                  รายได้ทั้งหมด
-                  <div className="stat-value text-primary text-xl lg:text-xl">{formatNumber(totalIncome)} บาท</div>
+                  {t('sidebar.totalIncome')}
+                  <div className="stat-value text-primary text-xl lg:text-xl">
+                    {formatNumber(totalIncome)} {t('sidebar.currency')}
+                  </div>
                 </div>
               )}
 
@@ -657,10 +634,12 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
               {isAdminside && (
 
                 <div className="stat-title text-sm lg:text-base" style={menuStyle}>
-                  น้ำหนักรวม
-                  <div className="stat-value text-secondary text-xl lg:text-xl">{totalQuality.toFixed(2)} กิโลกรัม</div>
+                  {t('sidebar.totalWeight')}
+                  <div className="stat-value text-secondary text-xl lg:text-xl">
+                    {totalQuality.toFixed(2)} {t('sidebar.kg')}
+                  </div>
                   <div className="stat-value text-xl lg:text-xl">
-                    ส่งออกแล้วรวม {deliveryData.filter(item => item.paidstatus === true).length} ชุด
+                    {t('sidebar.totalDelivered', { count: deliveryData.filter(item => item.paidstatus === true).length })}
                   </div>
                 </div>
               )}
@@ -675,7 +654,7 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
             {isAdminside && (
               <Grid item xs={12} lg={4}>
                 <DateTimePicker
-                  label="วัน/เวลาเริ่มต้น"
+                  label={t('sidebar.startDate')}
                   value={startDate}
                   onChange={(newValue) => setStartDate(newValue)}
                   ampm={false}
@@ -690,7 +669,7 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
             {isAdminside && (
               <Grid item xs={12} lg={4}>
                 <DateTimePicker
-                  label="วัน/เวลาสิ้นสุด"
+                  label={t('sidebar.endDate')}
                   value={endDate}
                   onChange={(newValue) => setEndDate(newValue)}
                   ampm={false}
@@ -708,13 +687,13 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
                 variant="contained"
                 onClick={() => {
                   handleDateChange();
-                  enqueueSnackbar('ค้นหาวันที่สำเร็จ', { variant: 'info' });
+                  enqueueSnackbar(t('sidebar.searchSuccess'), { variant: 'info' });
                 }}
               >
-                ค้นหาวันที่
+                {t('sidebar.searchDate')}
               </Button>
               <TextField
-                label="ค้นหาชื่อผักหรือราคา"
+                label={t('sidebar.searchLabel')}
                 variant="outlined"
                 fullWidth
                 value={searchTerm}
@@ -741,18 +720,26 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
                       />
                     </figure>
                     <div className="card-body" style={totalStyle}>
+
+
                       <h2 className="card-title text-base lg:text-lg text-center">{card.title}</h2>
-                      <div className="stat-title mr-4 text-lg lg:text-base text-center">
-                        ราคา {card.price} บาท
+                      <div className="text-xl lg:text-xl font-bold text-center">
+                        {t('sidebar.price')}
                       </div>
+                      <div className="text-xl lg:text-2xl font-bold text-center">
+                        {card.price} {t('sidebar.currency')}
+                      </div>
+
 
                       {isAdminside && (
                         <>
                           <div className="stat-title mr-4 text-sm lg:text-base text-center">
-                            รวม {(cumulativeQuantities[card.id] || 0).toFixed(2)} กก.
+                            {t('sidebar.totalSold')} {(cumulativeQuantities[card.id] || 0).toFixed(2)} {t('sidebar.kg')}
                           </div>
                           <div className="text-center text-sm text-red-500">
-                            {card.stockKg <= 0 ? '❌ สินค้าหมด' : `✅ เหลือ ${card.stockKg} กก.`}
+                            {card.stockKg <= 0
+                              ? t('sidebar.outOfStock')
+                              : t('sidebar.remainingStock', { count: card.stockKg })}
                           </div>
                         </>
                       )}
@@ -763,8 +750,10 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
                           onClick={() => addToCart(card)}
                           disabled={card.stockKg <= 0}
                         >
-                          {card.stockKg <= 0 ? 'หมดสต๊อก' : 'เพิ่ม'}
+                          {card.stockKg <= 0 ? t('sidebar.outOfStockShort') : t('sidebar.add')}
                         </button>
+
+
                       </div>
                     </div>
                   </div>
@@ -772,6 +761,9 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
               ))}
 
             </div>
+
+
+
           </div>
           <div
             className="w-full lg:w-[calc(50%-4px)] bg-gray-200 dark:bg-gray-700 overflow-y-auto"
@@ -783,22 +775,22 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
             }}
           >
 
-            <h2 className="text-lg font-bold mb-0">เลือกผลไม้ใส่ตระกร้า</h2>
+            <h2 className="text-lg font-bold mb-0">{t('sidebar.cartTitle')}</h2>
             <div>
               <ul className="flex justify-between items-center mb-0 font-bold">
-                <li className="w-1/5">ชื่อ</li>
-                <li className="w-1/5">ราคา</li>
-                <li className="w-1/5">กก.</li>
-                <li className="w-1/5">รวม</li>
-                <li className="w-1/5">เพิ่ม/ลด(ขีด)</li>
+                <li className="w-1/5">{t('sidebar.table.name')}</li>
+                <li className="w-1/5">{t('sidebar.table.price')}</li>
+                <li className="w-1/5">{t('sidebar.table.kg')}</li>
+                <li className="w-1/5">{t('sidebar.table.total')}</li>
+                <li className="w-1/5">{t('sidebar.table.modify')}</li>
               </ul>
               <ul>
                 {cart.map((item, index) => (
                   <li key={index} className="mb-2 flex justify-between items-center">
-                    <span className="w-1/5">{item.title}</span> {/* Display title */}
-                    <span className="w-1/5">{item.price}</span> {/* Display price */}
-                    <span className="w-1/5">{item.name} ({item.quantity})</span> {/* Display quantity */}
-                    <span className="w-1/5">{(item.price * item.quantity).toFixed(2)}</span> {/* Display total */}
+                    <span className="w-1/5">{item.title}</span>
+                    <span className="w-1/5">{item.price}</span>
+                    <span className="w-1/5">{item.name} ({item.quantity})</span>
+                    <span className="w-1/5">{(item.price * item.quantity).toFixed(2)}</span>
                     <div className="w-1/5 flex">
                       <button className="btn btn-xs btn-secondary mx-1" onClick={() => decrementQuantity(item)}>-</button>
                       <button className="btn btn-xs btn-primary mx-1" onClick={() => incrementQuantity(item)}>+</button>
@@ -809,30 +801,43 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
             </div>
 
 
-            <div className="mt-2 flex justify-end font-bold">
-              <div style={{ paddingRight: '10px' }}>ราคารวม</div>
-              <div  >{formatNumber(calculateTotalPrice())} บาท</div>
 
+            <div className="mt-2 flex justify-end font-bold">
+              <div style={{ paddingRight: '10px' }}>{t('sidebar.totalPrice')}</div>
+              <div>{formatNumber(calculateTotalPrice())} {t('sidebar.currency')}</div>
             </div>
             {isAdminside && (
               <div className="mt-4 flex justify-end">
-                <input type="text" value={moneyReceived} onChange={e => setMoneyReceived(Number(e.target.value))} placeholder="รับเงินมา"
-                  className="input input-bordered w-full max-w-xs" style={menuStyle} />
+                <TextField
+                  label={t('sidebar.moneyReceived')}
+                  variant="outlined"
+                  fullWidth
+                  value={moneyReceived}
+                  onChange={(e) => setMoneyReceived(e.target.value)}
+                  placeholder="รับเงินมา"
+                  sx={{
+                    ...totalStyle,
+                    maxWidth: '300px' // ✅ ไม่ให้หลุดจอมือถือ
+                  }}
+                />
               </div>
             )}
             {isAdminside && (
               <div className="mt-4 flex justify-end">
-                <div className="stat-title mr-4">ทอนเงิน</div>
-                <div className="stat-value text-primary" style={menuStyle}> {calculateChange()} บาท</div>
+                <div className="stat-title mr-4">{t('sidebar.changeLabel')}</div>
+                <div className="stat-value text-primary" style={menuStyle}>
+                  {calculateChange()} {t('sidebar.currency')}
+                </div>
               </div>
+
             )}
             {isAdminside && (
               <div className="mt-4 flex justify-end">
                 <div className="relative w-full max-w-xs">
                   <input
-                    style={menuStyle}
+                    style={totalStyle}
                     type="text"
-                    placeholder="ใส่ทะเบียนรถ/สถานที่ส่ง"
+                    placeholder={t('sidebar.deliveryLocation')}
                     value={deliveryLocation}
                     onChange={handleLocationChange}
                     className="input input-bordered w-full bg-gray-800 text-white rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -860,8 +865,8 @@ function Sidebar({ isDarkTheme, Popup_W, Success_W, Load_iy, user }) {
             )}
 
             <div className="mt-4 flex justify-end">
-              <button className="btn btn-secondary mr-2" onClick={clearCart}>ล้าง</button>
-              <button className="btn btn-primary" onClick={submitCart}>สั่งของ</button>
+              <button className="btn btn-secondary mr-2" onClick={clearCart}>{t('sidebar.clear')}</button>
+              <button className="btn btn-primary" onClick={submitCart}>{t('sidebar.submit')}</button>
             </div>
           </div>
         </div>

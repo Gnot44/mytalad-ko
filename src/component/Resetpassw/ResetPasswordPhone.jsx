@@ -1,3 +1,4 @@
+// ResetPasswordPhone.jsx — รองรับ i18n + รองรับ MUI Theme
 import { useState, useEffect, useCallback } from "react";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { collection, getDocs, updateDoc, query, where } from "firebase/firestore";
@@ -5,17 +6,16 @@ import { db } from "../../firebase";
 import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
 import {
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  CircularProgress,
-  Alert,
-  Box,
+  Card, CardContent, TextField, Button, Typography,
+  CircularProgress, Alert, Box, useTheme
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 const ResetPasswordPhone = () => {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -29,17 +29,13 @@ const ResetPasswordPhone = () => {
   const navigate = useNavigate();
 
   const setupRecaptcha = useCallback(() => {
-    if (window.recaptchaVerifier) {
-      window.recaptchaVerifier.clear();
-    }
+    if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
     window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
       size: "invisible",
       callback: () => setError(""),
-      "expired-callback": () => {
-        setError("reCAPTCHA หมดอายุ กรุณาลองใหม่");
-      },
+      "expired-callback": () => setError(t("reset.errors.captchaExpired")),
     });
-  }, [auth]);
+  }, [auth, t]);
 
   useEffect(() => {
     setupRecaptcha();
@@ -54,7 +50,7 @@ const ResetPasswordPhone = () => {
   const sendOTP = async () => {
     setError("");
     if (!username.trim() || !phone || !/^0[1-9]\d{8}$/.test(phone)) {
-      setError("กรุณากรอกชื่อผู้ใช้และเบอร์โทรให้ถูกต้อง");
+      setError(t("reset.errors.invalidForm"));
       return;
     }
 
@@ -65,7 +61,7 @@ const ResetPasswordPhone = () => {
       const credsSnapshot = await getDocs(credsQuery);
 
       if (credsSnapshot.empty) {
-        setError("ไม่พบชื่อผู้ใช้นี้ในระบบ");
+        setError(t("reset.errors.userNotFound"));
         setLoading(false);
         return;
       }
@@ -74,7 +70,7 @@ const ResetPasswordPhone = () => {
       const userData = userDoc.data();
 
       if (userData.phone !== fullPhone) {
-        setError("เบอร์โทรไม่ตรงกับข้อมูลในระบบ");
+        setError(t("reset.errors.phoneMismatch"));
         setLoading(false);
         return;
       }
@@ -84,7 +80,7 @@ const ResetPasswordPhone = () => {
       setConfirmationResult(result);
     } catch (error) {
       console.error("ส่ง OTP ไม่สำเร็จ:", error);
-      setError("ส่ง OTP ไม่สำเร็จ กรุณาตรวจสอบเบอร์โทรหรือ reCAPTCHA");
+      setError(t("reset.errors.otpSendFail"));
     } finally {
       setLoading(false);
     }
@@ -93,12 +89,12 @@ const ResetPasswordPhone = () => {
   const verifyOTP = async () => {
     setError("");
     if (!otp || !newPassword || !confirmPassword) {
-      setError("กรุณากรอก OTP และรหัสผ่านใหม่ให้ครบ");
+      setError(t("reset.errors.missingFields"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("รหัสผ่านใหม่ทั้ง 2 ช่องไม่ตรงกัน");
+      setError(t("reset.errors.passwordMismatch"));
       return;
     }
 
@@ -110,7 +106,7 @@ const ResetPasswordPhone = () => {
       const credsSnapshot = await getDocs(credsQuery);
 
       if (credsSnapshot.empty) {
-        setError("ไม่พบผู้ใช้งานจากเบอร์นี้");
+        setError(t("reset.errors.phoneNotFound"));
         setLoading(false);
         return;
       }
@@ -122,49 +118,59 @@ const ResetPasswordPhone = () => {
       navigate("/login");
     } catch (error) {
       console.error("OTP ไม่ถูกต้อง:", error);
-      setError("OTP ไม่ถูกต้องหรือหมดอายุ กรุณาลองใหม่");
+      setError(t("reset.errors.otpInvalid"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#f4f6f8", display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <Card sx={{ width: 400, p: 3, boxShadow: 4, borderRadius: 2 }}>
+    <Box sx={{
+      minHeight: "100vh",
+      bgcolor: theme.palette.background.default,
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+    }}>
+      <Card sx={{
+        width: 400,
+        p: 3,
+        bgcolor: theme.palette.background.paper,
+        boxShadow: 4,
+        borderRadius: 2,
+      }}>
         <CardContent>
           <Typography variant="h4" align="center" gutterBottom>
-            ลืมรหัสผ่าน
+            {t("reset.title")}
           </Typography>
 
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-          <TextField label="ชื่อผู้ใช้" fullWidth margin="normal" value={username} onChange={(e) => setUsername(e.target.value)} disabled={loading} />
-          <TextField label="เบอร์โทร (เช่น 0891234567)" fullWidth margin="normal" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} disabled={loading} />
+          <TextField label={t("reset.username")} fullWidth margin="normal" value={username} onChange={(e) => setUsername(e.target.value)} disabled={loading} />
+          <TextField label={t("reset.phone")} fullWidth margin="normal" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} disabled={loading} />
 
           {!confirmationResult && (
             <Button variant="contained" color="primary" fullWidth onClick={sendOTP} disabled={loading || !username || !phone} sx={{ mt: 2 }}>
-              {loading ? <CircularProgress size={24} color="inherit" /> : "ส่ง OTP"}
+              {loading ? <CircularProgress size={24} color="inherit" /> : t("reset.sendOTP")}
             </Button>
           )}
 
           {confirmationResult && (
             <>
-              <TextField label="กรอกรหัส OTP" fullWidth margin="normal" value={otp} onChange={(e) => setOtp(e.target.value)} disabled={loading} />
-              <TextField label="รหัสผ่านใหม่" type="password" fullWidth margin="normal" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} disabled={loading} />
-              <TextField label="ยืนยันรหัสผ่านใหม่" type="password" fullWidth margin="normal" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} disabled={loading} />
+              <TextField label={t("reset.otp")} fullWidth margin="normal" value={otp} onChange={(e) => setOtp(e.target.value)} disabled={loading} />
+              <TextField label={t("reset.newPassword")} type="password" fullWidth margin="normal" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} disabled={loading} />
+              <TextField label={t("reset.confirmPassword")} type="password" fullWidth margin="normal" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} disabled={loading} />
               <Button variant="contained" color="success" fullWidth onClick={verifyOTP} disabled={loading || !otp || !newPassword || !confirmPassword} sx={{ mt: 2 }}>
-                {loading ? <CircularProgress size={24} color="inherit" /> : "ยืนยัน OTP และเปลี่ยนรหัสผ่าน"}
+                {loading ? <CircularProgress size={24} color="inherit" /> : t("reset.verify")}
               </Button>
             </>
           )}
 
           <Button variant="text" fullWidth onClick={() => navigate('/login')} sx={{ mt: 2 }}>
-            กลับไปหน้าเข้าสู่ระบบ
+            {t("reset.backToLogin")}
           </Button>
         </CardContent>
       </Card>
-
-      {/* recaptcha container (Invisible) */}
       <Box id="recaptcha-container" sx={{ display: "none" }} />
     </Box>
   );

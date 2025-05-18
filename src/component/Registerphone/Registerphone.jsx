@@ -5,19 +5,13 @@ import { db } from "../../firebase";
 import bcrypt from "bcryptjs";
 import { useNavigate } from "react-router-dom";
 import {
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  CircularProgress,
-  Alert,
-  Box,
-  Grid,
-  Snackbar,
+  Card, CardContent, TextField, Button, Typography,
+  CircularProgress, Alert, Box, Snackbar
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 const RegisterPhone = ({ onRegister }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -28,25 +22,19 @@ const RegisterPhone = ({ onRegister }) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-
-  // Snackbar state
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const auth = getAuth();
   const navigate = useNavigate();
 
   const setupRecaptcha = useCallback(() => {
-    if (window.recaptchaVerifier) {
-      window.recaptchaVerifier.clear();
-    }
+    if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
     window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
       size: "invisible",
       callback: () => setError(""),
-      "expired-callback": () => {
-        setError("reCAPTCHA หมดอายุ กรุณาลองใหม่");
-      },
+      "expired-callback": () => setError(t("register.errors.captchaExpired"))
     });
-  }, [auth]);
+  }, [auth, t]);
 
   useEffect(() => {
     setupRecaptcha();
@@ -67,7 +55,7 @@ const RegisterPhone = ({ onRegister }) => {
 
   const sendOTP = async () => {
     if (!phone || !/^0[1-9]\d{8}$/.test(phone)) {
-      setError("กรุณากรอกเบอร์โทรให้ถูกต้อง (เช่น 08xxxxxxxx)");
+      setError(t("register.errors.invalidPhone"));
       return;
     }
     setLoading(true);
@@ -77,17 +65,17 @@ const RegisterPhone = ({ onRegister }) => {
       const phoneSnapshot = await getDocs(collection(db, "credentials"));
       const phoneExists = phoneSnapshot.docs.some(doc => doc.data().phone === fullPhone);
       if (phoneExists) {
-        setError("เบอร์โทรนี้ถูกใช้งานแล้ว");
+        setError(t("register.errors.duplicatePhone"));
         setLoading(false);
         return;
       }
       await window.recaptchaVerifier.verify();
       const result = await signInWithPhoneNumber(auth, fullPhone, window.recaptchaVerifier);
       setConfirmationResult(result);
-      setCooldown(60);
+      setCooldown(30);
     } catch (error) {
       console.error("ส่ง OTP ไม่สำเร็จ:", error);
-      setError("เบอร์โทรไม่ถูกต้องหรือ reCAPTCHA ล้มเหลว");
+      setError(t("register.errors.invalidPhone"));
     } finally {
       setLoading(false);
     }
@@ -95,33 +83,32 @@ const RegisterPhone = ({ onRegister }) => {
 
   const verifyOTP = async () => {
     if (!otp || !confirmationResult) {
-      setError("กรุณากรอก OTP");
+      setError(t("register.otp"));
       return;
     }
     setLoading(true);
     try {
       const creds = await getDocs(collection(db, "credentials"));
-      const emailExists = creds.docs.some(doc => doc.data().email === email && email !== "");
-      const nameExists = creds.docs.some(doc => doc.data().name === name);
-      const usernameExists = creds.docs.some(doc => doc.data().username === username);
-      if (emailExists) {
-        setError("อีเมลนี้มีในระบบแล้ว");
+      if (email && creds.docs.some(doc => doc.data().email === email)) {
+        setError(t("register.errors.duplicateEmail"));
         setLoading(false);
         return;
       }
-      if (nameExists) {
-        setError("ชื่อนี้มีในระบบแล้ว");
+      if (creds.docs.some(doc => doc.data().name === name)) {
+        setError(t("register.errors.duplicateName"));
         setLoading(false);
         return;
       }
-      if (usernameExists) {
-        setError("Username นี้มีในระบบแล้ว");
+      if (creds.docs.some(doc => doc.data().username === username)) {
+        setError(t("register.errors.duplicateUsername"));
         setLoading(false);
         return;
       }
+
       const result = await confirmationResult.confirm(otp);
       const user = result.user;
       const hashedPassword = await bcrypt.hash(password, 10);
+
       await setDoc(doc(db, "credentials", user.uid), {
         uid: user.uid,
         name,
@@ -132,20 +119,22 @@ const RegisterPhone = ({ onRegister }) => {
         role: "customer",
         createdAt: new Date(),
       });
-      const userData = {
+
+      onRegister({
         uid: user.uid,
         phone: user.phoneNumber,
         role: "customer",
         name,
         email,
         username,
-      };
-      onRegister(userData);
-      setSnackbarOpen(true); // เปิด snackbar
-      setTimeout(() => navigate("/login"), 1500); // Navigate ไป login หลัง snackbar แสดง
+      });
+
+      setSnackbarOpen(true);
+      setTimeout(() => navigate("/login"), 1500);
+
     } catch (error) {
       console.error("OTP ไม่ถูกต้อง:", error);
-      setError("OTP ไม่ถูกต้องหรือหมดอายุ กรุณาลองใหม่");
+      setError(t("register.errors.otpInvalid"));
     } finally {
       setLoading(false);
     }
@@ -154,31 +143,38 @@ const RegisterPhone = ({ onRegister }) => {
   return (
     <Card sx={{ maxWidth: 400, mx: "auto", mt: 4 }}>
       <CardContent>
-        {/* Header with title and back button */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h5">ลงทะเบียน</Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+          <Typography variant="h5">{t("register.title")}</Typography>
           <Button variant="text" color="secondary" onClick={() => navigate("/login")}>
-            กลับ Login
+            {t("register.backToLogin")}
           </Button>
         </Box>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <TextField label="ชื่อ-นามสกุล" fullWidth value={name} onChange={(e) => setName(e.target.value)} sx={{ mb: 2 }} disabled={loading} />
-        <TextField label="ชื่อเพื่อเข้าใช้งานระบบ(แนะนำเป็น ภาษาอังกฤษ)" fullWidth value={username} onChange={(e) => setUsername(e.target.value)} sx={{ mb: 2 }} disabled={loading} />
-        <TextField label="อีเมล (ไม่จำเป็น)" type="email" fullWidth value={email} onChange={(e) => setEmail(e.target.value)} sx={{ mb: 2 }} disabled={loading} />
-        <TextField label="รหัสผ่าน" type="password" fullWidth value={password} onChange={(e) => setPassword(e.target.value)} sx={{ mb: 2 }} disabled={loading} />
-        <TextField label="เบอร์โทร (เช่น 0891234567)" fullWidth value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} sx={{ mb: 2 }} disabled={loading} />
+        <TextField label={t("register.name")} fullWidth value={name} onChange={(e) => setName(e.target.value)} sx={{ mb: 2 }} disabled={loading} />
+        <TextField label={t("register.username")} fullWidth value={username} onChange={(e) => setUsername(e.target.value)} sx={{ mb: 2 }} disabled={loading} />
+        <TextField label={t("register.email")} type="email" fullWidth value={email} onChange={(e) => setEmail(e.target.value)} sx={{ mb: 2 }} disabled={loading} />
+        <TextField label={t("register.password")} type="password" fullWidth value={password} onChange={(e) => setPassword(e.target.value)} sx={{ mb: 2 }} disabled={loading} />
+        <TextField label={t("register.phone")} fullWidth value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} sx={{ mb: 2 }} disabled={loading} />
 
-        <Button variant="contained" color="primary" fullWidth onClick={sendOTP} disabled={loading || cooldown > 0 || !name || !username || !password || !phone} sx={{ mb: 2 }}>
-          {loading ? <CircularProgress size={24} /> : cooldown > 0 ? `ส่ง OTP อีกครั้งใน ${cooldown} วินาที` : "ส่ง OTP"}
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          onClick={sendOTP}
+          disabled={loading || cooldown > 0 || !name || !username || !password || !phone}
+          sx={{ mb: 2 }}
+        >
+          {loading ? <CircularProgress size={24} /> :
+            cooldown > 0 ? t("register.resendOTPIn", { seconds: cooldown }) : t("register.sendOTP")}
         </Button>
 
         {confirmationResult && (
           <>
-            <TextField label="กรอกรหัส OTP" fullWidth value={otp} onChange={(e) => setOtp(e.target.value)} sx={{ mt: 2, mb: 2 }} disabled={loading} />
+            <TextField label={t("register.otp")} fullWidth value={otp} onChange={(e) => setOtp(e.target.value)} sx={{ mt: 2, mb: 2 }} disabled={loading} />
             <Button variant="contained" color="success" fullWidth onClick={verifyOTP} disabled={loading || !otp} sx={{ mb: 2 }}>
-              {loading ? <CircularProgress size={24} /> : "ยืนยัน & ลงทะเบียน"}
+              {loading ? <CircularProgress size={24} /> : t("register.verifyAndRegister")}
             </Button>
           </>
         )}
@@ -186,7 +182,6 @@ const RegisterPhone = ({ onRegister }) => {
         <Box id="recaptcha-container" sx={{ mt: 2 }} />
       </CardContent>
 
-      {/* Snackbar Success */}
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={1500}
@@ -194,7 +189,7 @@ const RegisterPhone = ({ onRegister }) => {
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert severity="success" sx={{ width: '100%' }}>
-          ลงทะเบียนสำเร็จ กำลังกลับไปหน้า Login...
+          {t("register.successMessage")}
         </Alert>
       </Snackbar>
     </Card>
